@@ -1,0 +1,21 @@
+
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    jcenter()
+    maven { url 'https://jitpack.io' }
+    flatDir {
+      dirs 'libs'
+    }
+}
+
+dependencies {
+    compile "net.dv8tion:JDA:4.1.1_101"
+}
+
+application {
+    mainClassName = 'me.skiincraft.discord.herostats.App'
+}
