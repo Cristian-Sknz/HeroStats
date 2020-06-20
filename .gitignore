@@ -4,3 +4,18 @@
 # Ignore Gradle build output directory
 build
 /bin/
+ola.json
+gods.json
+godranks.json
+getuser.json
+getqueuestats.json
+getmatchhistory.json
+getmatch.json
+getloadout.json
+getItens.json
+getchampionskins.json
+getchampioncards.json
+champions/Willo/willo.json
+champions.json
+assets/champions/championsrawPt.json
+assets/champions/championsrawEn.json
