@@ -43,14 +43,14 @@ public class MatchPlayer {
 	private List<Item> itemactive;
 	
 	private boolean hasWin;
+	private String json;
 
 	public MatchPlayer(int level, int assists, MatchChampion champion, long damageBot,
 			long damageUsingWeapon, long damageUsingMagical, long damageUsingPhysical, long damageMitigated,
 			long damage, long damageTaken, long damageTakenUsingMagical, long damageTakenUsingPhysical,
 			Kills killsDetails, int killstreak, int kills, int deaths, int goldEarned, int goldPerMinute, long healing,
 			long selfHealing, PaladinsMatch match, long playerId, String playerRegion, String playername,
-			LeagueSeason playerLeague, int playerPortalId, long playerPortalUserId, List<Item> itemactive, boolean hasWin) {
-		super();
+			LeagueSeason playerLeague, int playerPortalId, long playerPortalUserId, List<Item> itemactive, boolean hasWin, String json) {
 		this.level = level;
 		this.assists = assists;
 		this.champion = champion;
@@ -80,6 +80,7 @@ public class MatchPlayer {
 		this.playerPortalUserId = playerPortalUserId;
 		this.itemactive = itemactive;
 		this.hasWin = hasWin;
+		this.json = json;
 	}
 
 	public int getLevel() {
@@ -197,4 +198,19 @@ public class MatchPlayer {
 	public boolean HasWin() {
 		return hasWin;
 	}
+	
+	public String json() {
+		return json;
+	}
+
+	@Override
+	public String toString() {
+		return "MatchPlayer [level=" + level + ", assists=" + assists + ", champion=" + champion.getChampionName() + ", damage=" + damage
+				+ ", damageTaken=" + damageTaken + ", killstreak=" + killstreak + ", kills=" + kills + ", deaths="
+				+ deaths + ", goldEarned=" + goldEarned + ", healing=" + healing + ", selfHealing=" + selfHealing
+				+ ", match=" + match + ", playerId=" + playerId + ", playerRegion=" + playerRegion + ", playername="
+				+ playername + ", playerLeague=" + playerLeague + ", hasWin=" + hasWin + "]";
+	}
+	
+	
 }

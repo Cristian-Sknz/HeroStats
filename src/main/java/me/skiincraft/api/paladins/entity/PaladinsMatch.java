@@ -25,6 +25,7 @@ public interface PaladinsMatch {
 	boolean hasReplay();
 	int getMatchQueueId();
 	String getGamemode();
+	boolean isRanked();
 	String ret_msg();
 	
 	JsonObject getJsonObject();

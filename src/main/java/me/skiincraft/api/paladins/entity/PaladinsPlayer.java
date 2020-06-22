@@ -46,4 +46,6 @@ public interface PaladinsPlayer {
 	String ret_msg();
 	
 	JsonObject getJsonObject();
+	
+	
 }

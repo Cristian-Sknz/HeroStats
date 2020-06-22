@@ -2,7 +2,8 @@ package me.skiincraft.api.paladins.common;
 
 import java.util.List;
 
-import me.skiincraft.api.paladins.Paladins;
+import me.skiincraft.api.paladins.Queue;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.objects.Ability;
 import me.skiincraft.api.paladins.objects.Card;
 
@@ -21,16 +22,16 @@ public class Champion {
 	private int health;
 	private int championSpeed;
 	
-	private Paladins paladinsapi;
+	private Queue queue;
 	
 	private List<Ability> abilityPT;
 	private List<Ability> abilityEN;
-	private List<Card> cardsPT;
-	private List<Card> cardsEN;
+	
+	private List<Card> loadedCards;
 
 	public Champion(int championId, String championName, String championEnglishName, String championIcon, String title,
 			String englishTitle, String role, String englishRole, String lore, String englishLore, int health,
-			int championSpeed, List<Ability> abilityPT, List<Ability> abilityEN, Paladins paladinsapi) {
+			int championSpeed, List<Ability> abilityPT, List<Ability> abilityEN, Queue queue) {
 		this.championId = championId;
 		this.championName = championName;
 		this.championEnglishName = championEnglishName;
@@ -45,6 +46,7 @@ public class Champion {
 		this.championSpeed = championSpeed;
 		this.abilityPT = abilityPT;
 		this.abilityEN = abilityEN;
+		this.queue = queue;
 	}
 
 	public int getChampionId() {
@@ -88,11 +90,11 @@ public class Champion {
 	}
 	
 	public List<Card> getCardsPT() {
-		return cardsPT;
+		return queue.getChampionsCards(getChampionId(), Language.Portuguese);
 	}
 	
 	public List<Card> getCardsEN() {
-		return cardsEN;
+		return queue.getChampionsCards(getChampionId(), Language.English);
 	}
 
 	public String getChampionIcon() {
@@ -112,12 +114,20 @@ public class Champion {
 		return englishLore;
 	}
 
-	public Paladins getPaladinsapi() {
-		return paladinsapi;
+	public Queue getQueue() {
+		return queue;
 	}
 
-	public void setPaladinsapi(Paladins paladinsapi) {
-		this.paladinsapi = paladinsapi;
+	public void setQueue(Queue queue) {
+		this.queue = queue;
+	}
+
+	public List<Card> getLoadedCards() {
+		if (loadedCards == null || loadedCards.size() == 0) {
+			loadedCards = getCardsPT();
+			loadedCards.addAll(getCardsEN());
+		}
+		return loadedCards;
 	}
 
 }

@@ -13,5 +13,14 @@ public enum Rarity {
 	public int getId() {
 		return id;
 	}
+	
+	public static Rarity getRarityByName(String name) {
+		for (Rarity rarity : Rarity.values()) {
+			if (rarity.name().equalsIgnoreCase(name)) {
+				return rarity;
+			}
+		}
+		return null;
+	}
 
 }

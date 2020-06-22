@@ -1,24 +1,13 @@
 package me.skiincraft.api.paladins.parser;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.Queue;
 import me.skiincraft.api.paladins.common.Champion;
 import me.skiincraft.api.paladins.enums.DamageType;
@@ -37,11 +26,9 @@ public class JsonChampions {
 	}
 	
 	public List<Champion> refreshchampions() {
-		JsonArray arrayPt = (jsonPt == null) ? getElement("pt").getAsJsonArray()
-				: new JsonParser().parse(jsonPt).getAsJsonArray();
+		JsonArray arrayPt = new JsonParser().parse(jsonPt).getAsJsonArray();
+		JsonArray arrayEn = new JsonParser().parse(jsonEn).getAsJsonArray();
 		
-		JsonArray arrayEn = (jsonEn == null) ? getElement("en").getAsJsonArray()
-				: new JsonParser().parse(jsonPt).getAsJsonArray();
 		List<Champion> champions = new ArrayList<Champion>();
 
 		for (JsonElement a : arrayPt) {
@@ -91,17 +78,13 @@ public class JsonChampions {
 					object.get("Speed").getAsInt(),
 					abilityPT,
 					abilityEN,
-					queue.getPaladinsAPI());
+					queue);
 			}
 			champions.add(champion);
 		}
 		return champions;
 	}
 	
-	public void championsLocalJsonParse() {
-		
-	}
-
 	public static int getLastCharAt(char regex, String str) {
 		int i = 0;
 		int achou = 0;
@@ -112,30 +95,6 @@ public class JsonChampions {
 			i++;
 		}
 		return achou;
-	}
-
-	public static void generateImage(String url, String filename, String path) {
-		try {
-			BufferedImage image;
-			image = ImageIO.read(new URL(url));
-			File file = new File(path + filename + ".png");
-			ImageIO.write(image, "png", file);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static JsonElement getElement(String lang) {
-		try {
-			String filename = (lang.toLowerCase() == "pt")? "championsrawPt.json" : "championsrawEn.json";
-			InputStream in = new FileInputStream(new File(Paladins.CHAMPIONS_PATH + filename));
-			Reader reader = new InputStreamReader(in);
-			JsonElement ola = new JsonParser().parse(reader);
-			return ola;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 
 }

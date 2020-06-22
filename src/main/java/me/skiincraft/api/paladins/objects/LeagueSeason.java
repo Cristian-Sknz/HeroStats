@@ -29,7 +29,10 @@ public class LeagueSeason {
 	public Tier getTier() {
 		return tier;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "LeagueSeason [wins=" + wins + ", losses=" + losses + ", points=" + points + ", tier=" + tier + "]";
+	}
 
 }

@@ -9,9 +9,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.common.Champion;
 import me.skiincraft.api.paladins.entity.PaladinsMatch;
+import me.skiincraft.api.paladins.entity.Session;
 import me.skiincraft.api.paladins.enums.Tier;
 import me.skiincraft.api.paladins.matches.MatchChampion;
 import me.skiincraft.api.paladins.matches.MatchPlayer;
@@ -25,12 +25,12 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 
 	public JsonObject object;
 	public JsonArray array;
-	public Paladins paladins;
+	public Session session;
 	
-	public PaladinsMatchBuilder(String json, Paladins paladins) {
+	public PaladinsMatchBuilder(String json, Session session) {
 		array = new JsonParser().parse(json).getAsJsonArray();
 		object = new JsonParser().parse(json).getAsJsonArray().get(0).getAsJsonObject();
-		this.paladins = paladins;
+		this.session = session;
 	}
 
 	@Override
@@ -40,7 +40,7 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 			JsonObject ob = e.getAsJsonObject();
 			
 			Champion original = null;
-			for (Champion champ : paladins.getQueue().getLoadedchampions()) {
+			for (Champion champ : session.getRequester().getLoadedchampions()) {
 				if (champ.getChampionId() == ob.get("ChampionId").getAsInt()) {
 					original = champ;
 					break;
@@ -72,7 +72,7 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 			MatchPlayer player = new MatchPlayer(
 					JsonUtils.getInt(ob, "Account_Level"),
 					JsonUtils.getInt(ob, "Assists"),
-					new MatchChampion(original, cardPurch, ob.get("Skin").getAsString(), ob.get("SkinId").getAsInt(), paladins),
+					new MatchChampion(original, cardPurch, ob.get("Skin").getAsString(), ob.get("SkinId").getAsInt(), session),
 					JsonUtils.getLong(ob, "Damage_Bot"),
 					JsonUtils.getLong(ob, "Damage_Done_In_Hand"),
 					JsonUtils.getLong(ob, "Damage_Done_Magical"),
@@ -102,11 +102,11 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 					JsonUtils.getInt(ob ,"playerPortalId"),
 					JsonUtils.getLong(ob ,"playerPortalUserId"),
 					PaladinsUtils.getActiveItens(),
-					JsonUtils.get(ob,"Win_Status").contains("Winner"));
+					JsonUtils.get(ob,"Win_Status").contains("Winner"), ob.toString());
 			lista.add(player);
 		}
 		
-		return null;
+		return lista;
 	}
 
 	@Override
@@ -118,7 +118,7 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 	public List<Champion> getBans() {
 		List<Champion> banslist = new ArrayList<Champion>();
 
-		for (Champion champ : paladins.getQueue().getLoadedchampions()) {
+		for (Champion champ : session.getRequester().getLoadedchampions()) {
 			if (object.get("BanId").getAsInt() == 0) {
 				break;
 			}
@@ -223,8 +223,12 @@ public class PaladinsMatchBuilder implements PaladinsMatch {
 
 	@Override
 	public String getGamemode() {
-		// TODO Auto-generated method stub
-		return null;
+		return object.get("Map_Game").getAsString().split(" ")[0];
+	}
+	
+	@Override
+	public boolean isRanked() {
+		return (getGamemode().equalsIgnoreCase("ranked")) ? true : false;
 	}
 
 	@Override
