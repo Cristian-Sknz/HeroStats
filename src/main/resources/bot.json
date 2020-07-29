@@ -1,0 +1,14 @@
+[
+  {
+    "BotName": "HeroStats",
+    "Main": "me.skiincraft.discord.herostats.HeroStatsBot",
+    "Version": "1.0",
+    "OwnerId": "247096601242238991",
+    "DiscordInfo": {
+      "Token": "TOKEN",
+      "BotId": "722879893238710323",
+      "Shards": "1",
+      "DefaultPrefix": "h!"
+    }
+  }
+]
