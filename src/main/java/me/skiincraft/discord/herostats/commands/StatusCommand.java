@@ -10,25 +10,25 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import me.skiincraft.api.paladins.common.ChampionRank;
-import me.skiincraft.api.paladins.entity.PaladinsPlayer;
-import me.skiincraft.api.paladins.entity.Session;
+import me.skiincraft.api.paladins.common.EndPoint;
+import me.skiincraft.api.paladins.entity.player.Player;
+import me.skiincraft.api.paladins.entity.player.PlayerChampion;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.enums.PlayerStatus;
 import me.skiincraft.api.paladins.enums.PlayerStatus.Status;
-import me.skiincraft.api.paladins.exceptions.PlayerNotFoundException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.apis.Emoji;
-import me.skiincraft.discord.core.commands.Command;
-import me.skiincraft.discord.core.entity.BotTextChannel;
-import me.skiincraft.discord.core.entity.BotUser;
-import me.skiincraft.discord.core.entity.ContentMessage;
-import me.skiincraft.discord.core.multilanguage.LanguageManager;
+import me.skiincraft.discord.core.command.Command;
+import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.configuration.LanguageManager;
+import me.skiincraft.discord.core.utils.Emoji;
 import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.imagebuild.StatusImage;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 
 public class StatusCommand extends Command {
 
@@ -37,32 +37,32 @@ public class StatusCommand extends Command {
 	}
 
 	@Override
-	public void execute(BotUser user, String[] args, BotTextChannel channel) {
+	public void execute(User user, String[] args, TextChannel channel) {
 		// LanguageManager lang = getLanguageManager();
 		if (args.length == 0) {
 			reply("h!" + getUsage());
 			return;
 		}
 		LanguageManager lang = getLanguageManager();
-		Session session = HeroStatsBot.getPaladins().getSessionsCache().get(0);
+		EndPoint endPoint = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
 		try {
 			List<SearchPlayer> searchPlayer = (args.length >= 2)
-					? session.getRequester().searchPlayer(args[0], Platform.getPlatformByName(args[1]))
-					: session.getRequester().searchPlayer(args[0]);
-			System.out.println(searchPlayer.toString());
-			PaladinsPlayer player = session.getRequester().getPlayer(searchPlayer.get(0).getUserId()+"", null);
-			List<ChampionRank> champranks = session.getRequester().getChampionRanks(player.getId());
-			PlayerStatus status = session.getRequester().getPlayerStatus(player.getId() + "");
+					? endPoint.searchPlayer(args[0], Platform.getPlatformByName(args[1])).get().getAsList()
+					: endPoint.searchPlayer(args[0], Platform.PC).get().getAsList();
+			Player player = endPoint.getPlayer(searchPlayer.get(0).getUserId()).get();
+			
+			List<PlayerChampion> champranks = endPoint.getPlayerChampions(player.getId()).get().getAsList();
+			PlayerStatus status = endPoint.getPlayerStatus(player.getId() + "").get();
 			InputStream input = StatusImage.drawImage(champranks.get(0), player);
 
 			reply(new ContentMessage(embed(player, champranks, status).build(), input, "png"));
 
-		} catch (PlayerNotFoundException e) {
-			reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "INEXISTENT_USER")).build());
+		} catch (Exception e) {
+			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		}
 	}
 
-	public EmbedBuilder embed(PaladinsPlayer player, List<ChampionRank> rank, PlayerStatus status) {
+	public EmbedBuilder embed(Player player, List<PlayerChampion> rank, PlayerStatus status) {
 		LanguageManager lang = getLanguageManager();
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor(player.getInGameName(), null, player.getAvatarURL());
@@ -85,7 +85,7 @@ public class StatusCommand extends Command {
 		int kills = 0;
 		int deaths = 0;
 		int assists = 0;
-		for (ChampionRank r : rank) {
+		for (PlayerChampion r : rank) {
 			kills += r.getKills();
 			deaths += r.getDeaths();
 			assists += r.getAssists();
@@ -96,9 +96,9 @@ public class StatusCommand extends Command {
 		embed.addField(lang.getString("StatusCommand", "WINSRATE"),
 				IntegerUtils.getPorcentagem(player.getWins() + player.getLosses(), player.getWins()), true);
 		embed.setImage("attachment://" + "status" + ".png");
-		String champicon = rank.get(0).getChampion().getChampionIcon();
+		String champicon = rank.get(0).getChampion(Language.Portuguese).get().getIcon();
 		embed.setThumbnail(champicon);
-
+		embed.setFooter(":)", champicon);
 		try {
 			embed.setColor(ImageUtils.getPredominatColor(ImageIO.read(new URL(champicon))));
 		} catch (IOException e) {

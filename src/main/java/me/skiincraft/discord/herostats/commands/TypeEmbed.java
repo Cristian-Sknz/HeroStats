@@ -3,12 +3,11 @@ package me.skiincraft.discord.herostats.commands;
 import java.awt.Color;
 import java.util.Random;
 
-import me.skiincraft.discord.herostats.HeroStatsBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 
 public class TypeEmbed {
 
-	private static String defaultPrefix = HeroStatsBot.getMain().getPlugin().getDiscordInfo().getDefaultPrefix();
+	private static String defaultPrefix = "h!";
 
 	private static String randomHelpImage() {
 		Random r = new Random();

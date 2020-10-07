@@ -1,7 +1,6 @@
 
 plugins {
     id 'java-library'
-    //id 'application'
 }
 
 repositories {
@@ -12,9 +11,18 @@ repositories {
     }
 }
 
-dependencies {
-   implementation "net.dv8tion:JDA:4.1.1_101"
-   implementation group: 'org.ocpsoft.prettytime', name: 'prettytime', version: '4.0.0.Final'
-   //api 'com.github.Cristian-Sknz:Paladins-Wrapper:ba35a16ede'
+compileJava {
+    classpath = sourceSets.main.compileClasspath
+    options.encoding = 'UTF-8'
+}
 
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+   implementation 'com.github.Ou-su-Bot:OusuCore:v1.0.4'
+   compileOnly 'com.github.Cristian-Sknz:Paladins-Wrapper:1.0'
+   compileOnly group: 'net.dv8tion', name: 'JDA', version: '4.1.1_101'
+   compileOnly group: 'org.ocpsoft.prettytime', name: 'prettytime', version: '4.0.5.Final'
 }

@@ -8,22 +8,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-import me.skiincraft.api.paladins.Queue;
-import me.skiincraft.api.paladins.common.ChampionRank;
+import me.skiincraft.api.paladins.common.EndPoint;
+import me.skiincraft.api.paladins.entity.player.PlayerChampion;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
-import me.skiincraft.api.paladins.exceptions.PlayerNotFoundException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.commands.Command;
-import me.skiincraft.discord.core.entity.BotTextChannel;
-import me.skiincraft.discord.core.entity.BotUser;
-import me.skiincraft.discord.core.multilanguage.LanguageManager;
+import me.skiincraft.discord.core.command.Command;
+import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.enums.PaladinsClass;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 
 public class ClassStatsCommand extends Command {
 
@@ -33,63 +34,62 @@ public class ClassStatsCommand extends Command {
 	}
 
 	@Override
-	public void execute(BotUser user, String[] args, BotTextChannel channel) {
+	public void execute(User user, String[] args, TextChannel channel) {
 		LanguageManager lang = getLanguageManager();
 		if (args.length <= 1) {
-			// TODO Mensagem de advertencia.
 			reply("h!" + getUsage());
 			return;
 		}
 
 		if (convertClassString(args[1]) == null) {
-			reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "INVALID_CHAMPION_CLASS")).build());
+			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INVALID_CHAMPION_CLASS"), lang.getString("Warnings", "INVALID_CHAMPION_CLASS")).build());
 			return;
 		}
 
-		Queue requester = HeroStatsBot.getPaladins().getSessionsCache().get(0).getRequester();
+		EndPoint requester = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
 		try {
 			List<SearchPlayer> searchs = (args.length >= 3)
-					? requester.searchPlayer(args[0], Platform.getPlatformByName(args[2]))
-					: requester.searchPlayer(args[0]);
+					? requester.searchPlayer(args[0], Platform.getPlatformByName(args[2])).get().getAsList()
+					: requester.searchPlayer(args[0], Platform.PC).get().getAsList();
 
-			List<ChampionRank> ranks = requester.getChampionRanks(searchs.get(0).getUserId());
-			List<ChampionRank> classrank = getClassChampionRanks(ranks, convertClassString(args[1]));
+			List<PlayerChampion> ranks = requester.getPlayerChampions(searchs.get(0).getUserId()).get().getAsList();
+			List<PlayerChampion> classrank = getClassChampionRanks(ranks, convertClassString(args[1]));
 
 			reply(embed(searchs.get(0), classrank, PaladinsClass.Support).build());
 
-		} catch (PlayerNotFoundException e) {
-			reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "INEXISTENT_USER")).build());
+		} catch (Exception e) {
+			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		}
 	}
 
-	public EmbedBuilder embed(SearchPlayer search, List<ChampionRank> ranks, PaladinsClass clazz) {
+	public EmbedBuilder embed(SearchPlayer search, List<PlayerChampion> ranks, PaladinsClass clazz) {
 		EmbedBuilder embed = new EmbedBuilder();
-		String url = getClassImage(ranks.get(0).getChampion().getRole().replace("Paladins ", ""));
+		String url = getClassImage(ranks.get(0).getChampion(Language.Portuguese).get().getRole().replace("Paladins ", ""));
 		embed.setAuthor(search.getName(), null, url);
 		embed.setThumbnail(url);
 		Map<String, Integer> calcs = calcRanks(ranks);
 		embed.setDescription(":mag_right: Partidas Jogadas: " + calcs.get("matchs"));
 		embed.appendDescription("\n:game_die: Vitorias/Derrotas: " + calcs.get("wins") + "/" + calcs.get("losses"));
 
-		List<ChampionRank> sortedlist = ranks;
+		List<PlayerChampion> sortedlist = ranks;
 		StringBuffer moreplayed = new StringBuffer();
-		sortedlist.sort((ChampionRank o1, ChampionRank o2) -> {
-			return Integer.compare(o2.getMinutes(), o1.getMinutes());
+		sortedlist.sort((PlayerChampion o1, PlayerChampion o2) -> {
+			return Long.compare(o2.getPlayedTime(), o1.getPlayedTime());
 		});
 		for (int i = 0; i < sortedlist.size(); i++) {
-			ChampionRank champrank = sortedlist.get(i);
+			PlayerChampion champrank = sortedlist.get(i);
 			moreplayed.append("<:championemote:727241756281929729> " + champrank.getChampionName() + " - "
-					+ champrank.getMinutes() / 60 + " Hora(s)\n");
+					+ TimeUnit.MILLISECONDS.toMinutes(champrank.getPlayedTime()) / 60 + " Hora(s)\n");
 			if (i == 3) {
 				break;
 			}
 		}
 		StringBuffer morelevel = new StringBuffer();
-		sortedlist.sort((ChampionRank o1, ChampionRank o2) -> {
+		sortedlist.sort((PlayerChampion o1, PlayerChampion o2) -> {
 			return Integer.compare(o2.getChampionLevel(), o1.getChampionLevel());
 		});
 		for (int i = 0; i < sortedlist.size(); i++) {
-			ChampionRank champrank = sortedlist.get(i);
+			PlayerChampion champrank = sortedlist.get(i);
 			morelevel.append("<:championemote:727241756281929729> " + champrank.getChampionName() + " - "
 					+ champrank.getChampionLevel() + " Level\n");
 			if (i == 3) {
@@ -109,7 +109,7 @@ public class ClassStatsCommand extends Command {
 		return embed;
 	}
 
-	private Map<String, Integer> calcRanks(List<ChampionRank> ranks) {
+	private Map<String, Integer> calcRanks(List<PlayerChampion> ranks) {
 		Map<String, Integer> calc = new HashMap<>();
 		int wins = 0;
 		int losses = 0;
@@ -117,7 +117,7 @@ public class ClassStatsCommand extends Command {
 		int deaths = 0;
 		int assists = 0;
 
-		for (ChampionRank rank : ranks) {
+		for (PlayerChampion rank : ranks) {
 			wins += rank.getWins();
 			losses += rank.getLosses();
 			kills += rank.getKills();
@@ -135,16 +135,16 @@ public class ClassStatsCommand extends Command {
 		return calc;
 	}
 
-	public static List<ChampionRank> getClassChampionRanks(List<ChampionRank> allchamps, String clazz) {
-		List<ChampionRank> list = new ArrayList<>();
-		for (ChampionRank rank : allchamps) {
-			String r = rank.getChampion().getRole().replace("Paladins ", "");
+	public static List<PlayerChampion> getClassChampionRanks(List<PlayerChampion> allchamps, String clazz) {
+		List<PlayerChampion> list = new ArrayList<>();
+		for (PlayerChampion rank : allchamps) {
+			String r = rank.getChampion(Language.Portuguese).get().getRole().replace("Paladins ", "");
 			if (r.equalsIgnoreCase(clazz)) {
 				list.add(rank);
 			}
 		}
 
-		list.sort((ChampionRank o1, ChampionRank o2) -> {
+		list.sort((PlayerChampion o1, PlayerChampion o2) -> {
 			return Integer.compare(o1.getChampionLevel(), o2.getChampionLevel());
 		});
 

@@ -1,28 +1,31 @@
 package me.skiincraft.discord.herostats.commands;
 
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import org.ocpsoft.prettytime.PrettyTime;
 
-import me.skiincraft.api.paladins.Queue;
-import me.skiincraft.api.paladins.common.Champion;
-import me.skiincraft.api.paladins.common.ChampionRank;
+import me.skiincraft.api.paladins.common.EndPoint;
+import me.skiincraft.api.paladins.entity.champions.Champion;
+import me.skiincraft.api.paladins.entity.player.PlayerChampion;
+import me.skiincraft.api.paladins.entity.player.objects.PlayerChampions;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
-import me.skiincraft.api.paladins.exceptions.PlayerNotFoundException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.commands.Command;
-import me.skiincraft.discord.core.entity.BotTextChannel;
-import me.skiincraft.discord.core.entity.BotUser;
-import me.skiincraft.discord.core.entity.ContentMessage;
-import me.skiincraft.discord.core.multilanguage.Language;
-import me.skiincraft.discord.core.multilanguage.LanguageManager;
+import me.skiincraft.discord.core.command.Command;
+import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.StringUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.imagebuild.ChampionImage;
+
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
 
 public class ChampionCommand extends Command {
 
@@ -43,68 +46,65 @@ public class ChampionCommand extends Command {
 		return list.stream().filter(o -> o.equalsIgnoreCase(name)).findFirst().orElse(null);
 	}
 
-	public ChampionRank getChampion(List<ChampionRank> list, final String name) {
-		return list.stream().filter(o -> o.getChampion().getChampionName().equalsIgnoreCase(name)).findAny()
+	public PlayerChampion getChampion(PlayerChampions list, final String name) {
+		return list.getAsStream().filter(o -> o.getChampion(Language.Portuguese).get().getName().equalsIgnoreCase(name)).findAny()
 				.orElse(null);
 	}
 
 	@Override
-	public void execute(BotUser user, String[] args, BotTextChannel channel) {
+	public void execute(User user, String[] args, TextChannel channel) {
 		LanguageManager lang = getLanguageManager();
 		if (args.length <= 1) {
-			// TODO Mensagem de advertencia.
 			reply("h!"+ getUsage());
 			return;
 		}
-		Queue requester = HeroStatsBot.getPaladins().getSessionsCache().get(0).getRequester();
-		//List<String> championsname = requester.getLoadedchampions().stream().map(f -> f.getChampionName()).collect(Collectors.toList());
-
-		Champion champ = requester.getLoadedchampions().stream().filter(o -> StringUtils.containsEqualsIgnoreCase(o.getChampionName(), args[1])).findAny().orElse(null);
+		EndPoint requester = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
+		Champion champ = requester.getChampions(Language.Portuguese).get().getAsStream().filter(o -> StringUtils.containsEqualsIgnoreCase(o.getName(), args[1])).findAny().orElse(null);
+		
 		if (champ == null) {
-			reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
-			System.out.println(requester.getLoadedchampions().stream().filter(o -> o.getChampionName().contains("Bomb ")).findAny().orElse(null));
+			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_CHAMPION"), lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
 			return;
 		}
 
 		try {
 			List<SearchPlayer> searchlist = (args.length == 3)
-					? requester.searchPlayer(args[0], Platform.getPlatformByName(args[2]))
-					: requester.searchPlayer(args[0]);
+					? requester.searchPlayer(args[0], Platform.getPlatformByName(args[2])).get().getAsList()
+					: requester.searchPlayer((args[0]), Platform.PC).get().getAsList();
 
-			List<ChampionRank> ranks = requester.getChampionRanks(searchlist.get(0).getUserId());
-			ChampionRank crank = ranks.stream().filter(o -> o.getChampionId() == champ.getChampionId()).findFirst().orElse(null);
+			PlayerChampions ranks = requester.getPlayerChampions(searchlist.get(0).getUserId()).get();
+			PlayerChampion crank = ranks.getAsStream().filter(o -> o.getChampionId() == champ.getId()).findFirst().orElse(null);
 			
 			if (crank == null) {
-				reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
+				reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
 				return;
 			}
 			
+			
 			InputStream input = ChampionImage.drawImage(crank);
-			reply(new ContentMessage(embed(crank, ranks, searchlist.get(0)).build(), input, "png"));
-		} catch (PlayerNotFoundException e) {
-			reply(TypeEmbed.simpleEmbed("^.^", lang.getString("Warnings", "INEXISTENT_USER")).build());
+			reply(new ContentMessage(embed(crank, ranks.getAsList(), searchlist.get(0)).build(), input, "png"));
+		} catch (Exception e) {
+			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 			e.printStackTrace();
 		}
 	}
 
-	public EmbedBuilder embed(ChampionRank rank, List<ChampionRank> lista, SearchPlayer searchPlayer) {
+	public EmbedBuilder embed(PlayerChampion rank, List<PlayerChampion> lista, SearchPlayer searchPlayer) {
 		EmbedBuilder embed = new EmbedBuilder();
 		// <:championemote:727241756281929729>
 		LanguageManager lang = getLanguageManager();
 		int place = 1;
-		for (ChampionRank rank2 : lista) {
+		for (PlayerChampion rank2 : lista) {
 			if (rank2 == rank) {
 				break;
 			}
 			place++;
 		}
-		embed.setAuthor(searchPlayer.getInGameName(), null, rank.getChampion().getChampionIcon());
+		PrettyTime pretty = new PrettyTime(getLanguageManager().getLanguage().getLocale());
+		Champion champion = rank.getChampion(Language.Portuguese).get();
+		embed.setAuthor(searchPlayer.getInGameName(), null, champion.getIcon());
 		embed.setTitle(lang.getString(this.getClass(), "EMBEDTITLE"));
-		PrettyTime pretty = new PrettyTime(
-				(getLanguageManager().getLanguage() == Language.Portuguese) ? new Locale("pt", "BR")
-						: new Locale("en", "US"));
-		// rank.getLastplayed(),
-		embed.setThumbnail(rank.getChampion().getChampionIcon());
+		embed.setThumbnail(champion.getIcon());
+		
 		String placemessage = (place == 1)
 				? lang.getString(this.getClass(), "BESTCHAMPION").replace("{CHAMPION}", rank.getChampionName())
 						.replace("{PLAYER}", searchPlayer.getInGameName())
@@ -112,12 +112,17 @@ public class ChampionCommand extends Command {
 						.replace("{PLACE}", place + "º").replace("{PLAYER}", searchPlayer.getInGameName());
 
 		embed.setDescription("<:cards:728729369756958750> " + placemessage);
-		String playedtime = (rank.getMinutes() / 60 != 0) ? rank.getMinutes() / 60 + " hora(s)"
-				: rank.getMinutes() + " minuto(s)";
+		String playedtime = (TimeUnit.MILLISECONDS.toMinutes(rank.getPlayedTime()) / 60 != 0) ? TimeUnit.MILLISECONDS.toMinutes(rank.getPlayedTime()) / 60 + " hora(s)"
+				: TimeUnit.MILLISECONDS.toMinutes(rank.getPlayedTime()) + " minuto(s)";
 		embed.appendDescription("\n:clock3: " + lang.getString(this.getClass(), "TIMEPLAYED") + playedtime);
-		embed.appendDescription(
-				"\n:construction:" + lang.getString(this.getClass(), "LASTPLAY") + pretty.format(rank.getLastplayed()));
-		embed.setImage("attachment://" + "champion_command" + ".png");
+		embed.setFooter(":)", champion.getIcon());
+		try {
+			embed.appendDescription(
+					"\n:construction:" + lang.getString(this.getClass(), "LASTPLAY") + pretty.format(new SimpleDateFormat("MM/dd/yyyy HH:mm:ss a").parse(rank.getLastPlayed())));
+		} catch (ParseException e) {
+			e.printStackTrace();
+			return embed;
+		}
 		return embed;
 	}
 

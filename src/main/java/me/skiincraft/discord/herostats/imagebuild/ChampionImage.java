@@ -9,29 +9,31 @@ import java.io.InputStream;
 import java.net.URL;
 import java.text.DecimalFormat;
 
-import me.skiincraft.api.paladins.common.ChampionRank;
-import me.skiincraft.discord.core.apis.ImageBuilder;
-import me.skiincraft.discord.core.apis.ImageBuilder.Alignment;
+import me.skiincraft.api.paladins.entity.champions.Champion;
+import me.skiincraft.api.paladins.entity.player.PlayerChampion;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.discord.core.plugin.Plugin;
 import me.skiincraft.discord.core.textfont.CustomFont;
+import me.skiincraft.discord.core.utils.ImageBuilder;
 import me.skiincraft.discord.core.utils.IntegerUtils;
+import me.skiincraft.discord.core.utils.ImageBuilder.Alignment;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 
 public class ChampionImage {
 
-	public static InputStream drawImage(ChampionRank rank) {
+	public static InputStream drawImage(PlayerChampion rank) {
 		Plugin plugin = HeroStatsBot.getMain().getPlugin();
+		Champion champion = rank.getChampion(Language.Portuguese).get();
 		ImageBuilder image = new ImageBuilder("stats", 900, 239);
 		image.getGraphic().setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		CustomFont font = new CustomFont();
 		try {
-			System.out.println(rank);
 			Font kghappy = font.getFont("kghappy", Font.PLAIN, 23F);
 			image.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/backgrounds/" + rank.getChampionName()
 					+ " Background.png"), 0, 0, new Dimension(900, 239), Alignment.Bottom_left);
 			image.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/ChampionOverlayer.png"), 0, 0,
 					new Dimension(900, 239), Alignment.Bottom_left);
-			image.drawImage(new URL(rank.getChampion().getChampionIcon()), 118, 111, new Dimension(154, 154),
+			image.drawImage(new URL(champion.getIcon()), 118, 111, new Dimension(154, 154),
 					Alignment.Center);
 
 			float kda = (float) (rank.getKills() + rank.getAssists()) / rank.getDeaths();
@@ -39,7 +41,7 @@ public class ChampionImage {
 			Font eras = font.getFont("eras_bold", Font.PLAIN, 23);
 			Font golden = font.getFont("GoldenHills", Font.PLAIN, 50);
 			
-			String champname = (rank.getChampionName() != null) ? rank.getChampionName() : (rank.getChampion().getChampionEnglishName() != null) ? rank.getChampion().getChampionEnglishName() : ":/";
+			String champname = rank.getChampionName();
 
 			DecimalFormat df = new DecimalFormat("#.00");
 			image.addCentralizedStringY(rank.getKills() + "", 281, 74, kghappy);
@@ -51,7 +53,7 @@ public class ChampionImage {
 			image.addCentralizedString(rank.getLosses() + "", 815, 202, golden.deriveFont(33F));
 			
 			image.addCentralizedString(champname, 116, 205, eras);
-			image.addCentralizedString(rank.getChampion().getRole().replace("Paladins ", ""), 116, 227, eras);
+			image.addCentralizedString(champion.getRole().replace("Paladins ", ""), 116, 227, eras);
 			// 116 205
 			return image.buildInput();
 		} catch (IOException e) {
