@@ -8,22 +8,18 @@ import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.command.ContentMessage;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
-import me.skiincraft.discord.herostats.imagebuild.ChampionImage;
-import me.skiincraft.discord.herostats.utils.HeroUtils;
+import me.skiincraft.discord.herostats.listeners.ChampionChoiceObject;
+import me.skiincraft.discord.herostats.listeners.ChampionChooser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 
-import java.io.InputStream;
-import java.text.DecimalFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ChampionCommand extends PaladinsCommand {
 
@@ -70,8 +66,6 @@ public class ChampionCommand extends PaladinsCommand {
 			return;
 		}
 
-		System.out.println(String.join(" ", newArgs));
-
 		try {
 			SearchPlayer searchPlayer = (newArgs.length == 3)
 					? searchPlayer(newArgs[0], Platform.getPlatformByName(newArgs[2]))
@@ -82,19 +76,7 @@ public class ChampionCommand extends PaladinsCommand {
 				return;
 			}
 
-			PlayerChampions ranks = requester.getPlayerChampions(searchPlayer.getUserId()).get();
-			PlayerChampion crank = ranks.getAsStream().filter(o -> o.getChampionId() == champ.getId()).findFirst().orElse(null);
-			
-			if (crank == null) {
-				reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
-				return;
-			}
-
-			reply(TypeEmbed.processing().build(), processing -> {
-				InputStream input = ChampionImage.drawImage(crank);
-				reply(new ContentMessage(embed(crank, ranks.getAsList(), searchPlayer).build(), input, "png"));
-				processing.delete().queue();
-			});
+			reply(embedChoice(champ, searchPlayer).build(), message -> ChampionChooser.objects.add(new ChampionChoiceObject(user.getIdLong(), channel, message, champ, searchPlayer, requester)));
 		} catch (SearchException e) {
 			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
@@ -102,39 +84,19 @@ public class ChampionCommand extends PaladinsCommand {
 		}
 	}
 
-	public EmbedBuilder embed(PlayerChampion rank, List<PlayerChampion> lista, SearchPlayer searchPlayer) {
+	public EmbedBuilder embedChoice(Champion champion, SearchPlayer searchPlayer){
 		EmbedBuilder embed = new EmbedBuilder();
-		LanguageManager lang = getLanguageManager();
+		embed.setAuthor(searchPlayer.getInGameName(),null,champion.getIcon());
+		embed.setDescription(":one: - Todos os modos;\n")
+				.appendDescription(":two: - Competitivo;\n")
+				.appendDescription(":three: - Cerco;\n")
+				.appendDescription(":four: - Deathmatch;\n")
+				.appendDescription(":five: - Chacina.\n");
 
-		int place = lista.indexOf(rank);
-
-		Champion champion = rank.getChampion(Language.Portuguese).get();
-		embed.setAuthor(searchPlayer.getInGameName(), null, champion.getIcon());
-		embed.setTitle(lang.getString(this.getClass(), "EMBEDTITLE"));
 		embed.setThumbnail(champion.getIcon());
-		
-		String placemessage = (place == 1)
-				? lang.getString(this.getClass(), "BESTCHAMPION").replace("{CHAMPION}", rank.getChampionName())
-						.replace("{PLAYER}", searchPlayer.getInGameName())
-				: lang.getString(this.getClass(), "PLACECHAMPION").replace("{CHAMPION}", rank.getChampionName())
-						.replace("{PLACE}", place + "º").replace("{PLAYER}", searchPlayer.getInGameName());
-
-		String playedtime = (TimeUnit.MILLISECONDS.toMinutes(rank.getMillisPlayed()) / 60 != 0) ? TimeUnit.MILLISECONDS.toMinutes(rank.getMillisPlayed()) / 60 + " hora(s)"
-				: TimeUnit.MILLISECONDS.toMinutes(rank.getMillisPlayed()) + " minuto(s)";
-
-		embed.setDescription("<:cards:728729369756958750> " + placemessage);
-		embed.appendDescription("\n:clock3: " + lang.getString(this.getClass(), "TIMEPLAYED") + playedtime);
-		embed.setColor(HeroUtils.paladinsClassColor(champion));
-
-		embed.setFooter("Jogou pela ultima vez em");
-		embed.setTimestamp(rank.getLastPlayed());
-		DecimalFormat df = new DecimalFormat("#.0");
-
-		embed.addField("Modo", "Todos os modos.", true);
-		embed.addField("Taxa de Vitoria", IntegerUtils.getPorcentagem(rank.getWins() + rank.getLosses(), rank.getWins()), true);
-		embed.addField("Taxa de Abates", IntegerUtils.getPorcentagem(rank.getKills() + rank.getDeaths(), rank.getKills()), true);
+		embed.setFooter("Caso queira cancelar digite: 6");
+		embed.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC));
 
 		return embed;
 	}
-
 }

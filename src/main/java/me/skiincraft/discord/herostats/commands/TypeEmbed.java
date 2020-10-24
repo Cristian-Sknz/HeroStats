@@ -73,7 +73,7 @@ public class TypeEmbed {
 
 	public static EmbedBuilder privateProfile() {
 		EmbedBuilder embed = new EmbedBuilder();
-		embed.setTitle("<:dnd2:464520569560498197> Perfil privado!");
+		embed.setTitle("<:dnd2:769610221655425122> Perfil privado!");
 		embed.setDescription("Este usuário que você solicitou tem o perfil privado.");
 		embed.setColor(new Color(255, 137, 81));
 		embed.setFooter("Caso tenha o perfil privado, desabilite-o para mostrar.");

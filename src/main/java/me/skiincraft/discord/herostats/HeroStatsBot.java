@@ -10,7 +10,10 @@ import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.PaladinsBuilder;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.discord.core.plugin.OusuPlugin;
+import me.skiincraft.discord.herostats.chooser.Chooser;
+import me.skiincraft.discord.herostats.chooser.ChooserListeners;
 import me.skiincraft.discord.herostats.commands.*;
+import me.skiincraft.discord.herostats.listeners.ChampionChooser;
 import me.skiincraft.discord.herostats.listeners.DeckChooser;
 import me.skiincraft.discord.herostats.listeners.ReactionListeners;
 import me.skiincraft.discord.herostats.reactions.PageReaction;
@@ -21,6 +24,7 @@ import net.dv8tion.jda.api.entities.Emote;
 public class HeroStatsBot extends OusuPlugin {
 
 	private static HeroStatsBot herostats;
+	private static Chooser chooser;
 	private static Paladins paladins;
 
 	public static Paladins getPaladins() {
@@ -41,7 +45,7 @@ public class HeroStatsBot extends OusuPlugin {
 	@Override
 	public void onEnable() {		
 		herostats = this;
-		paladins = new PaladinsBuilder("YOUR-KEY", 1000).build();
+		paladins = new PaladinsBuilder("YOURKEY", 1000).build();
 
 		SessionConfiguration configuration = new SessionConfiguration(paladins);
 
@@ -66,8 +70,15 @@ public class HeroStatsBot extends OusuPlugin {
 		getPlugin().getEventManager().registerListener(new PageReaction());
 		getPlugin().getEventManager().registerListener(new ReactionListeners());
 		getPlugin().getEventManager().registerListener(new DeckChooser());
+		getPlugin().getEventManager().registerListener(new ChampionChooser());
+		ChooserListeners listener = new ChooserListeners();
+		getPlugin().getEventManager().registerListener(listener);
+		chooser = Chooser.of(listener);
 
 		getPlugin().addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
 	}
 
+	public static Chooser getChooser() {
+		return chooser;
+	}
 }

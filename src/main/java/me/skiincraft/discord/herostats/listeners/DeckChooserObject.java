@@ -1,10 +1,8 @@
 package me.skiincraft.discord.herostats.listeners;
 
 import me.skiincraft.api.paladins.entity.player.Loadout;
-import me.skiincraft.api.paladins.entity.player.objects.Loadouts;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
 
 import java.util.List;
 

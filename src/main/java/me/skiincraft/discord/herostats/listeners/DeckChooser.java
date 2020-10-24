@@ -3,7 +3,6 @@ package me.skiincraft.discord.herostats.listeners;
 import me.skiincraft.api.paladins.entity.player.Loadout;
 import me.skiincraft.discord.core.command.ChannelInteract;
 import me.skiincraft.discord.core.command.ContentMessage;
-import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.commands.DeckCommand;
 import me.skiincraft.discord.herostats.imagebuild.DeckPreviewImage;
