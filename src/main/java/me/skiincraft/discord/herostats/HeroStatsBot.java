@@ -1,24 +1,21 @@
 package me.skiincraft.discord.herostats;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-
-import javax.security.auth.login.LoginException;
+import java.util.Locale;
+import java.util.Objects;
 
 import me.skiincraft.api.paladins.Paladins;
-import me.skiincraft.api.paladins.entity.Session;
+import me.skiincraft.api.paladins.PaladinsBuilder;
+import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.discord.core.plugin.OusuPlugin;
-import me.skiincraft.discord.core.plugin.PluginManager;
-import me.skiincraft.discord.core.reactions.ReactionUtil;
-import me.skiincraft.discord.core.sqlobjects.TableBuilder;
-import me.skiincraft.discord.core.sqlobjects.TableBuilder.TableValues;
-import me.skiincraft.discord.herostats.commands.ChampionCommand;
-import me.skiincraft.discord.herostats.commands.ClassStatsCommand;
-import me.skiincraft.discord.herostats.commands.DeckCommand;
-import me.skiincraft.discord.herostats.commands.PartidaCommand;
-import me.skiincraft.discord.herostats.commands.StatusCommand;
-import me.skiincraft.discord.herostats.session.SessionDB;
+import me.skiincraft.discord.herostats.commands.*;
+import me.skiincraft.discord.herostats.listeners.DeckChooser;
+import me.skiincraft.discord.herostats.listeners.ReactionListeners;
+import me.skiincraft.discord.herostats.reactions.PageReaction;
+import me.skiincraft.discord.herostats.session.SessionConfiguration;
+
 import net.dv8tion.jda.api.entities.Emote;
 
 public class HeroStatsBot extends OusuPlugin {
@@ -35,46 +32,42 @@ public class HeroStatsBot extends OusuPlugin {
 	}
 
 	public static List<Emote> emotes = new ArrayList<>();
-	public static List<ReactionUtil> simples = new ArrayList<>();
 
 	public static Emote getEmoteByName(String emotename) {
+		if (emotes.size() == 0)	emotes = Objects.requireNonNull(getMain().getShardManager().getGuildById("719393220756242524")).getEmotes();
 		return emotes.stream().filter(o -> o.getName().equalsIgnoreCase(emotename)).findAny().orElse(null);
 	}
 	
 	@Override
-	public void onEnable() {
-		TableBuilder tableBuilder = new TableBuilder("sessions");
-		
-		tableBuilder.addColumn("order", TableValues.VARCHAR);
-		tableBuilder.addColumn("session", TableValues.VARCHAR);
-		tableBuilder.addColumn("date", TableValues.VARCHAR);
-		
-		tableBuilder.setIdAutoIncrement(false);
-		
-		getPlugin().getSQLite().createTable(tableBuilder.build());
+	public void onEnable() {		
 		herostats = this;
-		SessionDB sessiondb = new SessionDB();
-		paladins = new Paladins(DEVID, "TOKEN", sessiondb.getLastSession());
-		paladins.getSessionsCache().get(0).getRequester().refreshChampions();
-		sessiondb.setSession(paladins.getSessionsCache().get(0).getSessionId());
-		paladins.getSessionsCache().get(0).setOnValidation(new Consumer<Session>() {
-			public void accept(Session t) {
-				sessiondb.setSession(t.getSessionId());
-			}
-		});
-		
-		PluginManager.getPluginManager().registerCommands(new PartidaCommand());
-		PluginManager.getPluginManager().registerCommands(new StatusCommand());
-		PluginManager.getPluginManager().registerCommands(new ChampionCommand());
-		PluginManager.getPluginManager().registerCommands(new DeckCommand());
-		PluginManager.getPluginManager().registerCommands(new ClassStatsCommand());
-		
+		paladins = new PaladinsBuilder("YOUR-KEY", 1000).build();
+
+		SessionConfiguration configuration = new SessionConfiguration(paladins);
+
 		try {
-			startbot();
-		} catch (LoginException | IllegalArgumentException | IllegalAccessException e) {
+			configuration.resumeSessions();
+			paladins.getSessions().get(0).getEndPoint().getChampions(Language.Portuguese);
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		//emotes = getShardManager().getGuildById("719393220756242524").getEmotes();
+
+		getPlugin().getCommandManager().registerCommand(new StatusCommand());
+		getPlugin().getCommandManager().registerCommand(new ChampionCommand());
+		getPlugin().getCommandManager().registerCommand(new DeckCommand());
+		getPlugin().getCommandManager().registerCommand(new ClassStatsCommand());
+		getPlugin().getCommandManager().registerCommand(new SplitCommand());
+		getPlugin().getCommandManager().registerCommand(new HelpCommand());
+		getPlugin().getCommandManager().registerCommand(new PartidaCommand());
+        getPlugin().getCommandManager().registerCommand(new LeaderboardCommand());
+		getPlugin().getCommandManager().registerCommand(new PingCommand());
+		getPlugin().getCommandManager().registerCommand(new DataUsedCommand());
+		
+		getPlugin().getEventManager().registerListener(new PageReaction());
+		getPlugin().getEventManager().registerListener(new ReactionListeners());
+		getPlugin().getEventManager().registerListener(new DeckChooser());
+
+		getPlugin().addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
 	}
 
 }
