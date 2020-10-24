@@ -3,11 +3,7 @@ package me.skiincraft.discord.herostats.commands;
 import java.awt.Color;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
@@ -16,17 +12,20 @@ import me.skiincraft.api.paladins.common.EndPoint;
 import me.skiincraft.api.paladins.entity.player.PlayerChampion;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
+import me.skiincraft.api.paladins.exceptions.PlayerException;
+import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.Command;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.enums.PaladinsClass;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 
-public class ClassStatsCommand extends Command {
+public class ClassStatsCommand extends PaladinsCommand {
 
 	public ClassStatsCommand() {
 		super("class", Arrays.asList("classtatus", "classstats", "classstatus", "classe"),
@@ -48,17 +47,28 @@ public class ClassStatsCommand extends Command {
 
 		EndPoint requester = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
 		try {
-			List<SearchPlayer> searchs = (args.length >= 3)
-					? requester.searchPlayer(args[0], Platform.getPlatformByName(args[2])).get().getAsList()
-					: requester.searchPlayer(args[0], Platform.PC).get().getAsList();
+			SearchPlayer searchPlayer = (args.length >= 3)
+					? searchPlayer(args[0], Platform.getPlatformByName(args[2]))
+					: searchPlayer(args[0], Platform.PC);
 
-			List<PlayerChampion> ranks = requester.getPlayerChampions(searchs.get(0).getUserId()).get().getAsList();
-			List<PlayerChampion> classrank = getClassChampionRanks(ranks, convertClassString(args[1]));
+			if (searchPlayer.isPrivacyFlag()) {
+				reply(TypeEmbed.privateProfile().build());
+				return;
+			}
 
-			reply(embed(searchs.get(0), classrank, PaladinsClass.Support).build());
+			reply(TypeEmbed.processing().appendDescription("\nEssa operação usa muito processamento...").build(), message ->{
+				List<PlayerChampion> ranks = requester.getPlayerChampions(searchPlayer.getUserId()).get().getAsList();
+				List<PlayerChampion> classrank = getClassChampionRanks(ranks, convertClassString(args[1]));
 
-		} catch (Exception e) {
+				reply(embed(searchPlayer, classrank, PaladinsClass.Support).build());
+				message.delete().queue();
+			});
+		} catch (SearchException e) {
+			reply(TypeEmbed.simpleEmbed(getLanguageManager().getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager().getString("Warnings", "INEXISTENT_USER")).build());
+		} catch (PlayerException e) {
 			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+		} catch (Exception e){
+			reply(TypeEmbed.errorMessage(e, channel).build());
 		}
 	}
 
@@ -71,27 +81,20 @@ public class ClassStatsCommand extends Command {
 		embed.setDescription(":mag_right: Partidas Jogadas: " + calcs.get("matchs"));
 		embed.appendDescription("\n:game_die: Vitorias/Derrotas: " + calcs.get("wins") + "/" + calcs.get("losses"));
 
-		List<PlayerChampion> sortedlist = ranks;
-		StringBuffer moreplayed = new StringBuffer();
-		sortedlist.sort((PlayerChampion o1, PlayerChampion o2) -> {
-			return Long.compare(o2.getPlayedTime(), o1.getPlayedTime());
-		});
-		for (int i = 0; i < sortedlist.size(); i++) {
-			PlayerChampion champrank = sortedlist.get(i);
-			moreplayed.append("<:championemote:727241756281929729> " + champrank.getChampionName() + " - "
-					+ TimeUnit.MILLISECONDS.toMinutes(champrank.getPlayedTime()) / 60 + " Hora(s)\n");
+		StringBuilder moreplayed = new StringBuilder();
+		ranks.sort((PlayerChampion o1, PlayerChampion o2) -> Long.compare(o2.getMillisPlayed(), o1.getMillisPlayed()));
+		for (int i = 0; i < ranks.size(); i++) {
+			PlayerChampion champrank = ranks.get(i);
+			moreplayed.append("<:championemote:727241756281929729> ").append(champrank.getChampionName()).append(" - ").append(TimeUnit.MILLISECONDS.toMinutes(champrank.getMillisPlayed()) / 60).append(" Hora(s)\n");
 			if (i == 3) {
 				break;
 			}
 		}
-		StringBuffer morelevel = new StringBuffer();
-		sortedlist.sort((PlayerChampion o1, PlayerChampion o2) -> {
-			return Integer.compare(o2.getChampionLevel(), o1.getChampionLevel());
-		});
-		for (int i = 0; i < sortedlist.size(); i++) {
-			PlayerChampion champrank = sortedlist.get(i);
-			morelevel.append("<:championemote:727241756281929729> " + champrank.getChampionName() + " - "
-					+ champrank.getChampionLevel() + " Level\n");
+		StringBuilder morelevel = new StringBuilder();
+		ranks.sort((PlayerChampion o1, PlayerChampion o2) -> Integer.compare(o2.getChampionLevel(), o1.getChampionLevel()));
+		for (int i = 0; i < ranks.size(); i++) {
+			PlayerChampion champrank = ranks.get(i);
+			morelevel.append("<:championemote:727241756281929729> ").append(champrank.getChampionName()).append(" - ").append(champrank.getChampionLevel()).append(" Level\n");
 			if (i == 3) {
 				break;
 			}
@@ -144,12 +147,11 @@ public class ClassStatsCommand extends Command {
 			}
 		}
 
-		list.sort((PlayerChampion o1, PlayerChampion o2) -> {
-			return Integer.compare(o1.getChampionLevel(), o2.getChampionLevel());
-		});
-
+		list.sort(Comparator.comparingInt(PlayerChampion::getChampionLevel));
 		return list;
 	}
+
+
 
 	public String convertClassString(String string) {
 		if (string.equalsIgnoreCase("Dano")) {

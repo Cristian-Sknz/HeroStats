@@ -5,9 +5,14 @@ import me.skiincraft.api.paladins.enums.Tier;
 import me.skiincraft.discord.core.utils.StringUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 
+import javax.annotation.Nullable;
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.*;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
+import javax.imageio.stream.FileImageOutputStream;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,11 +46,40 @@ public class PaladinsImage {
         return Paths.get(assetspath + "/maps/");
     }
 
-    public static InputStream getMap(String map){
+    private static Path getAssetsPath() {
+        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
+        return Paths.get(assetspath + "/");
+    }
+
+    @Nullable
+    public static InputStream getAssetsImage(String imagename) {
         try {
             List<File> imageFile = new ArrayList<>();
-            for (Path path : Files.newDirectoryStream(getMapsPath())){
-                if (path.toFile().getName().endsWith(".jpg")){
+            for (Path path : Files.newDirectoryStream(getAssetsPath())) {
+                if (path.toFile().getName().endsWith(".jpg")) {
+                    imageFile.add(path.toFile());
+                }
+                if (path.toFile().getName().endsWith(".png")) {
+                    imageFile.add(path.toFile());
+                }
+            }
+
+            File image = imageFile.stream().filter(file -> file.getName().substring(0, file.getName().lastIndexOf(".")).equalsIgnoreCase(imagename))
+                    .findAny()
+                    .orElse(null);
+
+            return new FileInputStream(image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static InputStream getMap(String map) {
+        try {
+            List<File> imageFile = new ArrayList<>();
+            for (Path path : Files.newDirectoryStream(getMapsPath())) {
+                if (path.toFile().getName().endsWith(".jpg")) {
                     imageFile.add(path.toFile());
                 }
             }
@@ -54,6 +88,7 @@ public class PaladinsImage {
                     .findAny()
                     .orElse(null);
 
+            if (image == null) return getMap("default_map");
             return new FileInputStream(image);
         } catch (IOException e) {
             e.printStackTrace();
@@ -61,16 +96,16 @@ public class PaladinsImage {
         return null;
     }
 
-    public static InputStream getTier(Tier tier){
+    public static InputStream getTier(Tier tier) {
         try {
             List<File> imageFile = new ArrayList<>();
-            for (Path path : Files.newDirectoryStream(getTierPath())){
-                if (path.toFile().getName().endsWith(".png")){
+            for (Path path : Files.newDirectoryStream(getTierPath())) {
+                if (path.toFile().getName().endsWith(".png")) {
                     imageFile.add(path.toFile());
                 }
             }
 
-            File image = imageFile.stream().filter(file -> StringUtils.containsEqualsIgnoreCase(file.getName(), tier.name()))
+            File image = imageFile.stream().filter(file -> file.getName().substring(0, file.getName().lastIndexOf(".")).equalsIgnoreCase(tier.name()))
                     .findAny()
                     .orElse(null);
 
@@ -81,24 +116,20 @@ public class PaladinsImage {
         return null;
     }
 
-    public static InputStream getBackground(Champion champion){
+    public static InputStream getBackground(String championName) {
         try {
             List<File> imageFile = new ArrayList<>();
-            File defaultbg = null;
-            for (Path path : Files.newDirectoryStream(getBackgroundsPath())){
-                if (path.toFile().getName().toLowerCase().endsWith("background.png")){
-                    if (path.toFile().getName().toLowerCase().contains("default")){
-                        defaultbg = path.toFile();
-                        continue;
-                    }
+            for (Path path : Files.newDirectoryStream(getBackgroundsPath())) {
+                if (path.toFile().getName().toLowerCase().endsWith("background.png")) {
                     imageFile.add(path.toFile());
                 }
             }
 
-            File image = imageFile.stream().filter(file -> StringUtils.containsEqualsIgnoreCase(file.getName(), champion.getName()))
+            File image = imageFile.stream().filter(file -> StringUtils.containsEqualsIgnoreCase(file.getName(), championName))
                     .findAny()
-                    .orElse(defaultbg);
+                    .orElse(null);
 
+            if (image == null) return getBackground("default_background");
             return new FileInputStream(image);
         } catch (IOException e) {
             e.printStackTrace();
@@ -106,21 +137,30 @@ public class PaladinsImage {
         return null;
     }
 
-    public static InputStream getAvatar(Champion champion){
+    public static InputStream getBackground(Champion champion) {
+        return getBackground(champion.getName());
+    }
+
+    public static InputStream getAvatar(Champion champion) {
         try {
             List<File> imageFile = new ArrayList<>();
-            for (Path path : Files.newDirectoryStream(getAvatarPath())){
-                if (path.toFile().getName().endsWith(".jpg")){
+            for (Path path : Files.newDirectoryStream(getAvatarPath())) {
+                if (path.toFile().getName().endsWith(".jpg")) {
                     imageFile.add(path.toFile());
                 }
             }
             File image = imageFile.stream().filter(file -> StringUtils.containsEqualsIgnoreCase(file.getName(), champion.getName()))
                     .findAny()
                     .orElseGet(() -> {
-                        File file = new File(getAvatarPath().toUri() + champion.getName() + ".jpg");
-                        writeInJpeg(champion.getIcon(), file);
-
-                        return file;
+                        try {
+                            File file = new File(HeroStatsBot.getMain().getPlugin().getAssetsPath()+ "/avatar/" + champion.getName() + ".jpg");
+                            file.createNewFile();
+                            writeInJpeg(ImageIO.read(new URL(champion.getIcon())), file);
+                            return file;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        return null;
                     });
 
             return new FileInputStream(image);
@@ -130,24 +170,17 @@ public class PaladinsImage {
         return null;
     }
 
-    private static void writeInJpeg(String urlImage, File output){
+    private static void writeInJpeg(BufferedImage bufferedImage, File output) {
         try {
-        int[] RGB_MASKS = {0xFF0000, 0xFF00, 0xFF};
-        ColorModel RGB_OPAQUE = new DirectColorModel(32, RGB_MASKS[0], RGB_MASKS[1], RGB_MASKS[2]);
-        URL url = new URL(urlImage);
+            JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
+            jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            jpegParams.setCompressionQuality(1f);
 
-        Image img = Toolkit.getDefaultToolkit().createImage(url);
+            final ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            writer.setOutput(new FileImageOutputStream(output));
 
-        PixelGrabber pg = new PixelGrabber(img, 0, 0, -1, -1, true);
-        pg.grabPixels();
-        int width = pg.getWidth(), height = pg.getHeight();
-
-        DataBuffer buffer = new DataBufferInt((int[]) pg.getPixels(), pg.getWidth() * pg.getHeight());
-        WritableRaster raster = Raster.createPackedRaster(buffer, width, height, width, RGB_MASKS, null);
-        BufferedImage bi = new BufferedImage(RGB_OPAQUE, raster, false, null);
-
-        ImageIO.write(bi, "jpg", output);
-        } catch (Exception e) {
+            writer.write(null, new IIOImage(bufferedImage, null, null), jpegParams);
+        } catch (Exception e){
             e.printStackTrace();
         }
     }

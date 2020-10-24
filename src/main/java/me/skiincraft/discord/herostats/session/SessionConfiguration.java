@@ -16,7 +16,7 @@ import me.skiincraft.discord.herostats.HeroStatsBot;
 
 public class SessionConfiguration {
 
-	private Paladins paladins;
+	private final Paladins paladins;
 	private final String SESSIONS_PATH = "PaladinsApi/Sessions/";
 
 	public SessionConfiguration(Paladins paladins){
@@ -48,7 +48,6 @@ public class SessionConfiguration {
 			} catch (RequestException e) {
 				file.delete();
 				toRemove.add(file);
-				continue;
 			}
 		}
 
@@ -60,7 +59,7 @@ public class SessionConfiguration {
 		}
 		for (File file: sessions) {
 			Session session = paladins.resumeSession(file.getName().replace(".paladins", "")).get();
-			session.runValidation(null);
+			session.setOnValidating(null);
 		}
 	}
 

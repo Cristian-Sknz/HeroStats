@@ -1,23 +1,22 @@
 package me.skiincraft.discord.herostats.imagebuild;
 
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.RenderingHints;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.text.DecimalFormat;
-
 import me.skiincraft.api.paladins.entity.champions.Champion;
 import me.skiincraft.api.paladins.entity.player.PlayerChampion;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.discord.core.plugin.Plugin;
 import me.skiincraft.discord.core.textfont.CustomFont;
 import me.skiincraft.discord.core.utils.ImageBuilder;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.core.utils.ImageBuilder.Alignment;
+import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.PaladinsImage;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.util.Objects;
 
 public class ChampionImage {
 
@@ -29,11 +28,10 @@ public class ChampionImage {
 		CustomFont font = new CustomFont();
 		try {
 			Font kghappy = font.getFont("kghappy", Font.PLAIN, 23F);
-			image.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/backgrounds/" + rank.getChampionName()
-					+ " Background.png"), 0, 0, new Dimension(900, 239), Alignment.Bottom_left);
-			image.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/ChampionOverlayer.png"), 0, 0,
+			image.drawImage(ImageIO.read(PaladinsImage.getBackground(champion)), 0, 0, new Dimension(900, 239), Alignment.Bottom_left);
+			image.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAssetsImage("ChampionOverlayer"))), 0, 0,
 					new Dimension(900, 239), Alignment.Bottom_left);
-			image.drawImage(new URL(champion.getIcon()), 118, 111, new Dimension(154, 154),
+			image.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAvatar(champion))), 118, 111, new Dimension(154, 154),
 					Alignment.Center);
 
 			float kda = (float) (rank.getKills() + rank.getAssists()) / rank.getDeaths();

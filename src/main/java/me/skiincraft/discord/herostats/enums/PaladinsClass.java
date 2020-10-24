@@ -4,7 +4,7 @@ public enum PaladinsClass {
 
 	Damage(0), Support(2), Front_Line(3), Flanker(1);
 
-	private int id;
+	private final int id;
 
 	PaladinsClass(int id) {
 		this.id = id;

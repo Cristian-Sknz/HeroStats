@@ -8,32 +8,35 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 import me.skiincraft.api.paladins.entity.champions.Champion;
 import me.skiincraft.api.paladins.entity.player.Loadout;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.objects.Card;
 import me.skiincraft.api.paladins.objects.LoadoutItem;
-import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.plugin.Plugin;
 import me.skiincraft.discord.core.textfont.CustomFont;
 import me.skiincraft.discord.core.utils.ImageBuilder;
 import me.skiincraft.discord.core.utils.ImageBuilder.Alignment;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.PaladinsImage;
+
+import javax.imageio.ImageIO;
 
 public class DeckPreviewImage {
 	
 	public static class CardDeck {
-		private Card card;
-		private LoadoutItem item;
+		private final Card card;
+		private final LoadoutItem item;
 		
 		public CardDeck(Card card, LoadoutItem item) {
 			this.card = card;
 			this.item = item;
 		}
-		
+
 		public Card getCard() {
 			return card;
 		}
@@ -42,43 +45,49 @@ public class DeckPreviewImage {
 		}
 	}
 
-	public static InputStream drawImage(Loadout loadouts, LanguageManager lang) {
+	public static InputStream drawImage(Loadout loadouts) {
 		Plugin plugin = HeroStatsBot.getMain().getPlugin();
-		List<Card> c = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint()
-		.getChampionCards(loadouts.getChampionId(), Language.Portuguese)
-		.get().getAsList();
-		
-		List<CardDeck> loadoutCards = loadouts.getItems().stream().map(o ->{
-			for (Card carta : c) {
-				if (carta.getCardId2() == o.getItemId()) {
-					return new CardDeck(carta, o);
+		List<Card> c = HeroStatsBot.getPaladins().getSessions().get(0)
+				.getEndPoint()
+				.getChampionCards(loadouts.getChampionId(), Language.Portuguese)
+				.get()
+				.getAsList();
+
+		List<CardDeck> loadoutCards = new ArrayList<>();
+		for (LoadoutItem item : loadouts.getItems()) {
+			boolean internBoolean = false;
+			for (Card card : c){
+				if (internBoolean){
+					break;
+				}
+				if (item.getItemId() == card.getCardId2()){
+					loadoutCards.add(new CardDeck(card, item));
+					internBoolean = true;
 				}
 			}
-			
-			return null;
-		}).collect(Collectors.toList());
-		loadoutCards.remove(null);
+		}
 		
 		ImageBuilder im = new ImageBuilder("deckpreview", 900, 239);
 		im.getGraphic().setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		Champion champion = loadouts.getChampion().get();
 		try {
 			String champname = champion.getName();
-			im.drawImage(
-					new File(
-							plugin.getAssetsPath().getAbsolutePath() + "/backgrounds/" + champname + " Background.png"),
+			im.drawImage(ImageIO.read(PaladinsImage.getBackground(champion)),
 					0, 0, new Dimension(900, 239), Alignment.Bottom_left);
 
 			CustomFont font = new CustomFont();
 			Font arial = font.getFont("arial_rounded", Font.PLAIN, 12);
 			int x = 85;
 
-			for (CardDeck itens : loadoutCards) {
-				Card card = itens.getCard();
-				LoadoutItem item = itens.getItem();
-						im.drawImage(new URL(card.getIcon()), x, 76, new Dimension(127, 99), Alignment.Center);
-						im.drawImage(
-								new File(plugin.getAssetsPath().getAbsolutePath() + "/cards/" + "Level "
+			for (CardDeck items : loadoutCards) {
+				Card card = items.getCard();
+				LoadoutItem item = items.getItem();
+				        try {
+							im.drawImage(new URL(card.getIcon()), x, 76, new Dimension(127, 99), Alignment.Center);
+						} catch (Exception e){
+							im.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAssetsImage("default_card"))), x, 76, new Dimension(127, 99), Alignment.Center);
+						}
+						im.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/cards/" + "Level "
 										+ item.getPoints() + " Paladins Card.png"),
 								x, 122, new Dimension(161, 244), Alignment.Center);
 						// +180

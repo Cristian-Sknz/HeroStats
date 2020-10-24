@@ -13,8 +13,8 @@ import com.google.gson.JsonParser;
 
 public class JsonConfiguration {
 	
-	private File file;
-	private JsonObject object;
+	private final File file;
+	private final JsonObject object;
 	
 	public JsonConfiguration(File file) throws IOException {
 		if (!file.getName().toLowerCase().endsWith(".json")) {
@@ -104,7 +104,6 @@ public class JsonConfiguration {
 						return;
 					}
 					item = item.get(obj[i - 1]).getAsJsonObject();
-					continue;
 				} else {
 					while (i <= obj.length) {
 						if (i == obj.length) {
@@ -131,23 +130,23 @@ public class JsonConfiguration {
 	}
 	
 	public void set(String key, String value) {
-		this.setObject(key, (Object) value);
+		this.setObject(key, value);
 	}
 	
 	public void set(String key, Integer value) {
-		this.setObject(key, (Object) value);
+		this.setObject(key, value);
 	}
 	
 	public void set(String key, Float value) {
-		this.setObject(key, (Object) value);
+		this.setObject(key, value);
 	}
 	
 	public void set(String key, Double value) {
-		this.setObject(key, (Object) value);
+		this.setObject(key, value);
 	}
 	
 	public void set(String key, Long value) {
-		this.setObject(key, (Object) value);
+		this.setObject(key, value);
 	}
 	
 	public JsonObject getObject() {
@@ -178,10 +177,7 @@ public class JsonConfiguration {
 	}
 	
 	private boolean isJsonObject(String ob) {
-		if (ob.contains(".")) {
-			return true;
-		}
-		return false;
+		return ob.contains(".");
 	}
 
 }

@@ -10,13 +10,13 @@ import java.util.List;
 
 public class DeckChooserObject {
 
-    private long userId;
-    private TextChannel channel;
-    private List<Loadout> loadouts;
-    private Message chooserMessage;
-    private int loadoutsize;
+    private final long userId;
+    private final TextChannel channel;
+    private final List<Loadout> loadouts;
+    private final Message chooserMessage;
+    private final int loadoutsize;
 
-    private long time;
+    private final long time;
 
     public DeckChooserObject(long userId, TextChannel channel, List<Loadout> loadouts, Message chooserMessage) {
         this.userId = userId;

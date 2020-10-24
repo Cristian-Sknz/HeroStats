@@ -18,12 +18,13 @@ import java.awt.*;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class DeckChooser extends ListenerAdapter {
 
-    public static List<DeckChooserObject> objects = new ArrayList<>();
+    public static final List<DeckChooserObject> objects = new ArrayList<>();
 
     private void sendBiConsumer(long userId, Consumer<DeckChooserObject> consumer){
         DeckChooserObject chooser = objects.stream().filter(o -> o.getUserId() == userId).findAny().orElse(null);
@@ -63,7 +64,7 @@ public class DeckChooser extends ListenerAdapter {
         int num = Integer.parseInt(firstword);
         if (num == 0) num++;
         final int finalNum = num;
-        sendBiConsumer(event.getMember().getIdLong(), (chooser) -> {
+        sendBiConsumer(Objects.requireNonNull(event.getMember()).getIdLong(), (chooser) -> {
             if (event.getChannel().getIdLong() != chooser.getChannel().getIdLong()){
                 return;
             }
@@ -83,9 +84,9 @@ public class DeckChooser extends ListenerAdapter {
             objects.remove(chooser);
 
             Loadout loadout = chooser.getLoadouts().get(finalNum-1);
-            InputStream input = DeckPreviewImage.drawImage(loadout, new LanguageManager(event.getGuild()));
+            InputStream input = DeckPreviewImage.drawImage(loadout);
 
-            interact.reply(new ContentMessage(DeckCommand.embed(loadout).build(), input, "png"));
+            interact.reply(new ContentMessage(DeckCommand.embed(loadout).build(), input, "png"), message -> chooser.getChooserMessage().delete().queue());
         });
     }
 
@@ -94,8 +95,8 @@ public class DeckChooser extends ListenerAdapter {
         embed.setTitle("Processando!");
         MessageEmbed.AuthorInfo authorInfo = embedOriginal.getAuthor();
 
-        embed.setAuthor(authorInfo.getName(), authorInfo.getUrl(), authorInfo.getIconUrl());
-        embed.setThumbnail(embedOriginal.getThumbnail().getUrl());
+        embed.setAuthor(Objects.requireNonNull(authorInfo).getName(), authorInfo.getUrl(), authorInfo.getIconUrl());
+        embed.setThumbnail(Objects.requireNonNull(embedOriginal.getThumbnail()).getUrl());
         embed.setDescription(embedOriginal.getDescription());
         embed.appendDescription("\nAguarde um momento.");
         embed.setColor(Color.GREEN);
