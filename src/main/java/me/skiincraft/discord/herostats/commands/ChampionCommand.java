@@ -11,8 +11,8 @@ import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
-import me.skiincraft.discord.herostats.listeners.ChampionChoiceObject;
-import me.skiincraft.discord.herostats.listeners.ChampionChooser;
+import me.skiincraft.discord.herostats.chooser.ChooserObject;
+import me.skiincraft.discord.herostats.choosers.ChampionChooser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
@@ -76,7 +76,13 @@ public class ChampionCommand extends PaladinsCommand {
 				return;
 			}
 
-			reply(embedChoice(champ, searchPlayer).build(), message -> ChampionChooser.objects.add(new ChampionChoiceObject(user.getIdLong(), channel, message, champ, searchPlayer, requester)));
+			reply(embedChoice(champ, searchPlayer).build(), botmessage -> {
+				ChampionChooser chooser = new ChampionChooser(channel, botmessage, requester, searchPlayer);
+				chooser.setChampion(champ);
+				ChooserObject object = new ChooserObject(user.getIdLong(), channel,new String[]{"1", "2", "3", "4", "5", "cancel"});
+
+				HeroStatsBot.getChooser().registerChooser(object, chooser);
+			});
 		} catch (SearchException e) {
 			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
@@ -87,11 +93,12 @@ public class ChampionCommand extends PaladinsCommand {
 	public EmbedBuilder embedChoice(Champion champion, SearchPlayer searchPlayer){
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setAuthor(searchPlayer.getInGameName(),null,champion.getIcon());
+		embed.setTitle("Selecione um modo:");
 		embed.setDescription(":one: - Todos os modos;\n")
-				.appendDescription(":two: - Competitivo;\n")
-				.appendDescription(":three: - Cerco;\n")
-				.appendDescription(":four: - Deathmatch;\n")
-				.appendDescription(":five: - Chacina.\n");
+				.appendDescription(":two: - Competitivo\n")
+				.appendDescription(":three: - Cerco\n")
+				.appendDescription(":four: - Deathmatch\n")
+				.appendDescription(":five: - Chacina\n");
 
 		embed.setThumbnail(champion.getIcon());
 		embed.setFooter("Caso queira cancelar digite: 6");

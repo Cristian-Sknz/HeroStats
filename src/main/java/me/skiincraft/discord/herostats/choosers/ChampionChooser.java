@@ -1,5 +1,6 @@
-package me.skiincraft.discord.herostats.listeners;
+package me.skiincraft.discord.herostats.choosers;
 
+import me.skiincraft.api.paladins.common.EndPoint;
 import me.skiincraft.api.paladins.entity.champions.Champion;
 import me.skiincraft.api.paladins.entity.player.PlayerChampion;
 import me.skiincraft.api.paladins.entity.player.QueueChampion;
@@ -13,134 +14,102 @@ import me.skiincraft.discord.core.command.ChannelInteract;
 import me.skiincraft.discord.core.command.ContentMessage;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.IntegerUtils;
+import me.skiincraft.discord.herostats.chooser.ChooserInterface;
+import me.skiincraft.discord.herostats.chooser.ChooserObject;
 import me.skiincraft.discord.herostats.commands.TypeEmbed;
 import me.skiincraft.discord.herostats.imagebuild.ChampionImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.jetbrains.annotations.NotNull;
+import net.dv8tion.jda.api.entities.TextChannel;
 
-import java.awt.*;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
-public class ChampionChooser extends ListenerAdapter {
+public class ChampionChooser extends ChannelInteract implements ChooserInterface {
 
-    public static final List<ChampionChoiceObject> objects = new ArrayList<>();
+    private final TextChannel channel;
+    private final EndPoint endPoint;
+    private final SearchPlayer searchPlayer;
+    private final Message message;
 
-    private void sendBiConsumer(long userId, Consumer<ChampionChoiceObject> consumer){
-        ChampionChoiceObject chooser = objects.stream().filter(o -> o.getUserId() == userId).findAny().orElse(null);
-        if (chooser == null) return;
-        consumer.accept(chooser);
+    private Champion champion;
+
+    public ChampionChooser(TextChannel channel, Message message, EndPoint endPoint, SearchPlayer searchPlayer) {
+        this.channel = channel;
+        this.endPoint = endPoint;
+        this.message = message;
+        this.searchPlayer = searchPlayer;
+    }
+
+    public ChampionChooser setChampion(Champion champion) {
+        this.champion = champion;
+        return this;
+    }
+
+    public Champion getChampion() {
+        return champion;
     }
 
     @Override
-    public void onGuildMessageReceived(@NotNull GuildMessageReceivedEvent event) {
-        if (event.getAuthor().isBot()){
-            return;
-        }
-        if (objects.size() == 0){
-            return;
-        }
+    protected MessageChannel getTextChannel() {
+        return channel;
+    }
 
-        if(!event.getChannel().canTalk()){
-            return;
-        }
-
-        objects.forEach(o -> {
-            if (TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - o.getTime()) > 90){
-                objects.remove(o);
+    @Override
+    public boolean execute(String choice, Message message, Member member, ChooserObject object) {
+        try {
+            if (member.getIdLong() != object.getUserId()){
+                return false;
             }
-        });
-
-        String firstword = event.getMessage().getContentRaw().split(" ")[0];
-        if (!IntegerUtils.isNumeric(firstword)){
-            return;
-        }
-
-        if (firstword.length() >= 2){
-            return;
-        }
-
-        int num = Integer.parseInt(firstword);
-        if (num == 0) num++;
-        final int finalNum = num;
-        sendBiConsumer(Objects.requireNonNull(event.getMember()).getIdLong(), (chooser) -> {
-            if (event.getChannel().getIdLong() != chooser.getChannel().getIdLong()){
-                return;
-            }
-
-            if (finalNum > 5) {
-                return;
-            }
-
-            chooser.getMessage().editMessage(processing(chooser.getMessage().getEmbeds().get(0)).build()).queue();
-
-            ChannelInteract interact = new ChannelInteract() {
-                @Override
-                protected MessageChannel getTextChannel() {
-                    return event.getChannel();
-                }
-            };
-            LanguageManager lang = new LanguageManager(event.getGuild());
-            objects.remove(chooser);
-            try {
-            if (finalNum == 1){
-                PlayerChampions champions = chooser.getRequester().getPlayerChampions(chooser.getSearchPlayer().getUserId()).get();
-                PlayerChampion champion = champions.getById(chooser.getChampion().getId());
-                if (champion == null){
-                    interact.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
-                    chooser.getMessage().delete().queue();
-                    return;
+            LanguageManager lang = new LanguageManager(member.getGuild());
+            if (object.getOptions()[0].equalsIgnoreCase(choice)) {
+                channel.sendTyping().queue();
+                PlayerChampions champions = endPoint.getPlayerChampions(searchPlayer.getUserId()).get();
+                PlayerChampion champion = champions.getById(this.champion.getId());
+                if (champion == null) {
+                    reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
+                    this.message.delete().queue();
+                    return true;
                 }
                 InputStream input = ChampionImage.drawImage(champion);
-                interact.reply(new ContentMessage(embed(champion, champions.getAsList(), chooser.getSearchPlayer(), lang).build(), input, "png"));
-                chooser.getMessage().delete().queue();
+                reply(new ContentMessage(embed(champion, champions.getAsList(), searchPlayer, lang).build(), input, "png"));
+                this.message.delete().queue();
+                return true;
+            }
+            if (!IntegerUtils.isNumeric(choice)) {
+                return false;
             }
 
-            Queue queue = getQueueByNumber(finalNum, Platform.getPlatformByPortalId(chooser.getSearchPlayer().getPortalId()) != Platform.PC);
+            Queue queue = getQueueByNumber(Integer.parseInt(choice), Platform.getPlatformByPortalId(searchPlayer.getPortalId()) != Platform.PC);
             if (queue == null) {
-                return;
+                return false;
             }
 
-            QueueChampions champions = chooser.getRequester().getQueueStats(chooser.getSearchPlayer().getUserId(), queue).get();
-            QueueChampion champion = champions.getById(chooser.getChampion().getId());
+            channel.sendTyping().queue();
+            QueueChampions champions = endPoint.getQueueStats(searchPlayer.getUserId(), queue).get();
+            QueueChampion champion = champions.getById(this.champion.getId());
 
-            if (champion == null){
-                interact.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
-                chooser.getMessage().delete().queue();
-                return;
+            if (champion == null) {
+                reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_CHAMPION_NOT_LOCATED"), lang.getString("Warnings", "CHAMPION_NOT_LOCATED")).build());
+                this.message.delete().queue();
+                return true;
             }
             InputStream input = ChampionImage.drawImage(champion);
-            interact.reply(new ContentMessage(embed(champion, champions.getAsList(), chooser.getSearchPlayer(), lang).build(), input, "png"));
-            chooser.getMessage().delete().queue();
-            } catch (Exception e){
-                interact.reply(TypeEmbed.errorMessage(e, chooser.getChannel()).build());
-            }
-        });
+            reply(new ContentMessage(embed(champion, champions.getAsList(), searchPlayer, lang).build(), input, "png"));
+            this.message.delete().queue();
+        } catch (Exception e){
+            reply(TypeEmbed.errorMessage(e, channel).build());
+            this.message.delete().queue();
+            return true;
+        }
+        return false;
     }
 
-    public EmbedBuilder processing(MessageEmbed embedOriginal){
-        EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle("Processando!");
-        MessageEmbed.AuthorInfo authorInfo = embedOriginal.getAuthor();
-
-        embed.setAuthor(Objects.requireNonNull(authorInfo).getName(), authorInfo.getUrl(), authorInfo.getIconUrl());
-        embed.setThumbnail(Objects.requireNonNull(embedOriginal.getThumbnail()).getUrl());
-        embed.setDescription(embedOriginal.getDescription());
-        embed.appendDescription("\nAguarde um momento.");
-        embed.setColor(Color.GREEN);
-        return embed;
-    }
-
-    public EmbedBuilder embed(QueueChampion rank, List<QueueChampion> lista, SearchPlayer searchPlayer, LanguageManager lang) {
+    public EmbedBuilder embed(QueueChampion rank, java.util.List<QueueChampion> lista, SearchPlayer searchPlayer, LanguageManager lang) {
         EmbedBuilder embed = new EmbedBuilder();
         int place = 1 + lista.indexOf(rank);
 
@@ -211,4 +180,5 @@ public class ChampionChooser extends ListenerAdapter {
         if (number == 5) return Queue.Live_Onslaught;
         else return null;
     }
+
 }
