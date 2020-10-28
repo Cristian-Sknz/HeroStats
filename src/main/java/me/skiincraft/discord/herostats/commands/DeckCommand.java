@@ -9,11 +9,12 @@ import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.common.chooser.ChooserObject;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
-import me.skiincraft.discord.herostats.chooser.ChooserObject;
 import me.skiincraft.discord.herostats.imagebuild.DeckPreviewImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -33,6 +34,10 @@ public class DeckCommand extends PaladinsCommand {
 
     public DeckCommand() {
         super("deck", Arrays.asList("loadout", "baralho"), "deck <player> <champion> [platform]");
+    }
+
+    public Category category() {
+        return Category.Statistics;
     }
 
     private String[] replaceSpaceChamps(String[] string) {

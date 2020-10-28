@@ -2,6 +2,7 @@ package me.skiincraft.discord.herostats.commands;
 
 import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.hirez.DataUsed;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -14,6 +15,10 @@ public class DataUsedCommand extends PaladinsCommand {
 
     public DataUsedCommand() {
         super("dataused", Arrays.asList("data", "used"), "dataused");
+    }
+
+    public Category category() {
+        return Category.Owner;
     }
 
     @Override

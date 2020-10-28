@@ -9,6 +9,7 @@ import me.skiincraft.api.paladins.exceptions.MatchException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.configuration.LanguageManager;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.exceptions.UnavailableAPIException;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -23,6 +24,10 @@ public class HistoryCommand extends PaladinsCommand {
 
     public HistoryCommand() {
         super("history", Collections.singletonList("historico"), "history <player> [platform]");
+    }
+
+    public Category category() {
+        return Category.Match;
     }
 
     @Override

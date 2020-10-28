@@ -1,6 +1,7 @@
 package me.skiincraft.discord.herostats.commands;
 
 import me.skiincraft.discord.core.utils.Emoji;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -10,6 +11,10 @@ public class PingCommand extends PaladinsCommand {
 
     public PingCommand() {
         super("ping", null, "ping");
+    }
+
+    public Category category() {
+        return Category.Owner;
     }
 
     public void execute(User user, String[] args, TextChannel channel) {

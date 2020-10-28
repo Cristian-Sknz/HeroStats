@@ -16,6 +16,7 @@ import me.skiincraft.discord.core.command.ContentMessage;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.StringUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.imagebuild.LiveMatchImage;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -31,6 +32,10 @@ public class PartidaCommand extends PaladinsCommand {
 
 	public PartidaCommand() {
 		super("livematch", Collections.singletonList("partida"), "partida <username>");
+	}
+
+	public Category category() {
+		return Category.Match;
 	}
 
 	@Override

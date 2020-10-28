@@ -27,12 +27,13 @@ import java.util.List;
 
 public abstract class PaladinsCommand extends Command {
 
-    public static final int SEASON = 3;
+    public static final int SEASON = 4;
 
     public PaladinsCommand(String name, List<String> aliases, String usage) {
         super(name, aliases, usage);
     }
 
+    public abstract Category category();
 
     public EndPoint endpoint(){
         List<Session> sessions = HeroStatsBot.getPaladins().getSessions();

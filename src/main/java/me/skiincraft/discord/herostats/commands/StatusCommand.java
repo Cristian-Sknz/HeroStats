@@ -17,6 +17,7 @@ import me.skiincraft.discord.core.utils.Emoji;
 import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.imagebuild.StatusImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
@@ -36,6 +37,10 @@ public class StatusCommand extends PaladinsCommand {
 
 	public StatusCommand() {
 		super("status", Collections.singletonList("stats"), "status <nickname> [platform]");
+	}
+
+	public Category category() {
+		return Category.Statistics;
 	}
 
 	@Override

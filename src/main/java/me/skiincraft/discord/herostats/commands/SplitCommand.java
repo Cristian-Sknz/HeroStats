@@ -13,6 +13,7 @@ import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.api.paladins.ranked.RankedKBM;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.IntegerUtils;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.exceptions.UnavailableAPIException;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
@@ -31,6 +32,10 @@ public class SplitCommand extends PaladinsCommand {
 
     public SplitCommand() {
         super("split", Collections.singletonList("elo"), "split <nickname> [platform]");
+    }
+
+    public Category category() {
+        return Category.Ranking;
     }
 
     @Override

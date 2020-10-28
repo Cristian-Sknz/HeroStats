@@ -19,6 +19,7 @@ import me.skiincraft.discord.core.command.Command;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.enums.PaladinsClass;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -30,6 +31,10 @@ public class ClassStatsCommand extends PaladinsCommand {
 	public ClassStatsCommand() {
 		super("class", Arrays.asList("classtatus", "classstats", "classstatus", "classe"),
 				"class <player> <class> [platform]");
+	}
+
+	public Category category() {
+		return Category.Statistics;
 	}
 
 	@Override

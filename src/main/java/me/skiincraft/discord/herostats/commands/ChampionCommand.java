@@ -8,10 +8,11 @@ import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
+import me.skiincraft.discord.core.common.chooser.ChooserObject;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.herostats.HeroStatsBot;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
-import me.skiincraft.discord.herostats.chooser.ChooserObject;
 import me.skiincraft.discord.herostats.choosers.ChampionChooser;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -27,10 +28,16 @@ public class ChampionCommand extends PaladinsCommand {
 		super("champion", Arrays.asList("campeão", "campeao", "champ"), "champion <user> <champion> [platform]");
 	}
 
+	public Category category() {
+		return Category.Statistics;
+	}
+
 	public PlayerChampion getChampion(PlayerChampions list, final String name) {
 		return list.getAsStream().filter(o -> o.getChampion(Language.Portuguese).get().getName().equalsIgnoreCase(name)).findAny()
 				.orElse(null);
 	}
+
+
 
 	private String[] replaceSpaceChamps(String[] string){
 		return String.join(" ", string)
@@ -106,4 +113,6 @@ public class ChampionCommand extends PaladinsCommand {
 
 		return embed;
 	}
+
+
 }

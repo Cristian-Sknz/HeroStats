@@ -3,11 +3,14 @@ package me.skiincraft.discord.herostats.commands;
 import me.skiincraft.api.paladins.entity.leaderboard.LeaderBoard;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Tier;
+import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.Place;
-import me.skiincraft.discord.core.reactions.ReactionObject;
+import me.skiincraft.discord.core.common.reactions.ReactionObject;
+import me.skiincraft.discord.core.common.reactions.Reactions;
+import me.skiincraft.discord.core.common.reactions.custom.ReactionPage;
 import me.skiincraft.discord.core.utils.StringUtils;
+import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
-import me.skiincraft.discord.herostats.reactions.HistoryLists;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -18,11 +21,17 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class LeaderboardCommand extends PaladinsCommand {
 
     public LeaderboardCommand() {
         super("leaderboard", null, "leaderboard <elo>");
+    }
+
+    public Category category() {
+        return Category.Ranking;
     }
 
     @Override
@@ -52,49 +61,68 @@ public class LeaderboardCommand extends PaladinsCommand {
             tier = Tier.Master;
         }
 
-        LeaderBoard leaderboard = leaderBoard(tier);
-        List<Place> places = leaderboard.getAsList();
+        try {
+            LeaderBoard leaderboard = leaderBoard(tier);
+            List<Place> places = leaderboard.getAsList();
 
-        if (places.size() == 0){
-            reply("Não foi possivel responder a sua solicitação, API não retornou nenhum valor");
-            return;
-        }
-
-        if (isGrandMaster  && places.get(0).getPoints() < 100){
-            reply(grandMasterNull().build());
-            return;
-        }
-
-        List<List<Place>> partition = ListUtils.partition(places, 10);
-        List<EmbedBuilder> embeds = new ArrayList<>();
-
-        boolean isMaster = tier == Tier.Master && places.get(0).getPoints() > 99;
-        int size = partition.size();
-        if (isMaster){
-            if (isGrandMaster){
-                tier = Tier.Grandmaster;
-                size = 10;
-            } else {
-                List<List<Place>> masterParticion = new ArrayList<>(partition);
-                for (int p = 1; p <= 10; p++) {
-                    masterParticion.remove(0);
-                }
-                size = masterParticion.size();
-                partition = masterParticion;
+            if (places.size() == 0) {
+                reply("Não foi possivel responder a sua solicitação, API não retornou nenhum valor");
+                return;
             }
-        }
 
-        for (int i = 1; i <= size; i++){
-            if (isGrandMaster && i == 19) break;
-            List<Place> value = partition.get(i -1);
-            embeds.add(places(value, tier, i*10, size*10));
-        }
+            if (isGrandMaster && places.get(0).getPoints() < 100) {
+                reply(grandMasterNull().build());
+                return;
+            }
 
-        reply(embeds.get(0).build(), message -> {
-            message.addReaction("U+25C0").queue();
-            message.addReaction("U+25B6").queue();
-            HistoryLists.addToReaction(user, message, new ReactionObject(embeds, 0));
-        });
+            if (isGrandMaster && places.get(0).getPoints() > 100) {
+                places.removeAll(places.stream().filter(place -> place.getPoints() < 100).collect(Collectors.toList()));
+            }
+
+            List<List<Place>> partition = ListUtils.partition(places, 10);
+            List<EmbedBuilder> embeds = new ArrayList<>();
+
+            boolean isMaster = tier == Tier.Master && places.get(0).getPoints() > 99;
+            int size = partition.size();
+            if (isMaster) {
+                if (isGrandMaster) {
+                    tier = Tier.Grandmaster;
+                    size = 10;
+                } else {
+                    places.removeAll(places.stream().filter(place -> place.getPoints() >= 100)
+                            .limit(100).collect(Collectors.toList()));
+
+                    partition = ListUtils.partition(places, 10);
+                    size = partition.size();
+                }
+            }
+
+            for (int i = 1; i <= size; i++) {
+                if (isGrandMaster && i == 19) break;
+                List<Place> value = partition.get(i - 1);
+                embeds.add(places(value, tier, i * 10, size * 10));
+            }
+
+            reply(embeds.get(0).build(), message -> Objects.requireNonNull(Reactions.getInstance()).registerReaction(new ReactionObject(message, user.getIdLong(), new String[]{"U+25C0", "U+25B6"}),
+                    new ReactionPage(embeds, true)));
+        } catch (SearchException e){
+            reply(unavailableTier(tier).build());
+        } catch (Exception e) {
+            reply(TypeEmbed.errorMessage(e, channel).build());
+        }
+    }
+
+    public EmbedBuilder unavailableTier(Tier tier){
+        EmbedBuilder embed = new EmbedBuilder();
+        embed.setAuthor(tier.getName(Language.Portuguese), null, HeroUtils.getTierImage(tier));
+        embed.setTitle("Tabela Indisponível");
+        embed.setDescription("Essa tabela de classificação está indisponível\n" +
+                "o motivo pode ser por ninguém estar nesse elo ainda.");
+        embed.setColor(new Color(255, 214,0));
+        embed.setThumbnail(HeroUtils.getTierImage(tier));
+        embed.setFooter("Tabela de Classificação");
+
+        return embed;
     }
 
     public EmbedBuilder grandMasterNull() {
