@@ -3,12 +3,12 @@ package me.skiincraft.discord.herostats;
 import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.PaladinsBuilder;
 import me.skiincraft.api.paladins.enums.Language;
+import me.skiincraft.discord.core.common.chooser.Chooser;
+import me.skiincraft.discord.core.common.chooser.ChooserListeners;
+import me.skiincraft.discord.core.common.reactions.ReactionListeners;
+import me.skiincraft.discord.core.common.reactions.Reactions;
 import me.skiincraft.discord.core.plugin.OusuPlugin;
-import me.skiincraft.discord.herostats.chooser.Chooser;
-import me.skiincraft.discord.herostats.chooser.ChooserListeners;
 import me.skiincraft.discord.herostats.commands.*;
-import me.skiincraft.discord.herostats.listeners.ReactionListeners;
-import me.skiincraft.discord.herostats.reactions.PageReaction;
 import me.skiincraft.discord.herostats.session.SessionConfiguration;
 
 import java.io.IOException;
@@ -18,6 +18,7 @@ public class HeroStatsBot extends OusuPlugin {
 
 	private static HeroStatsBot herostats;
 	private static Chooser chooser;
+	private static Reactions reaction;
 	private static Paladins paladins;
 
 	public static Paladins getPaladins() {
@@ -50,18 +51,23 @@ public class HeroStatsBot extends OusuPlugin {
         getPlugin().getCommandManager().registerCommand(new LeaderboardCommand());
 		getPlugin().getCommandManager().registerCommand(new PingCommand());
 		getPlugin().getCommandManager().registerCommand(new DataUsedCommand());
-		
-		getPlugin().getEventManager().registerListener(new PageReaction());
-		getPlugin().getEventManager().registerListener(new ReactionListeners());
 
 		ChooserListeners listener = new ChooserListeners();
 		chooser = Chooser.of(listener);
 		getPlugin().getEventManager().registerListener(listener);
+
+		ReactionListeners rlistener = new ReactionListeners();
+		reaction = Reactions.of(rlistener);
+		getPlugin().getEventManager().registerListener(rlistener);
 
 		getPlugin().addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
 	}
 
 	public static Chooser getChooser() {
 		return chooser;
+	}
+
+	public static Reactions getReaction() {
+		return reaction;
 	}
 }
