@@ -9,6 +9,7 @@ import me.skiincraft.api.paladins.entity.player.objects.QueueChampions;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.enums.Queue;
+import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.ChannelInteract;
 import me.skiincraft.discord.core.command.ContentMessage;
@@ -61,11 +62,11 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
 
     @Override
     public boolean execute(String choice, Message message, Member member, ChooserObject object) {
+        LanguageManager lang = new LanguageManager(member.getGuild());
         try {
             if (member.getIdLong() != object.getUserId()){
                 return false;
             }
-            LanguageManager lang = new LanguageManager(member.getGuild());
             if (object.getOptions()[0].equalsIgnoreCase(choice)) {
                 channel.sendTyping().queue();
                 PlayerChampions champions = endPoint.getPlayerChampions(searchPlayer.getUserId()).get();
@@ -101,9 +102,11 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
             InputStream input = ChampionImage.drawImage(champion);
             reply(new ContentMessage(embed(champion, champions.getAsList(), searchPlayer, lang).build(), input, "png"));
             this.message.delete().queue();
+        } catch (PlayerException e) {
+            reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+            return true;
         } catch (Exception e){
-            reply(TypeEmbed.errorMessage(e, channel).build());
-            this.message.delete().queue();
+            reply(TypeEmbed.errorMessage(e, channel).build(), m2 -> this.message.delete().queue());
             return true;
         }
         return false;
