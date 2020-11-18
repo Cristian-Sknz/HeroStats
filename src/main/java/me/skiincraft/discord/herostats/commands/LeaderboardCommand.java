@@ -18,10 +18,8 @@ import net.dv8tion.jda.api.entities.User;
 import org.apache.commons.collections4.ListUtils;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class LeaderboardCommand extends PaladinsCommand {
@@ -34,6 +32,7 @@ public class LeaderboardCommand extends PaladinsCommand {
         return Category.Ranking;
     }
 
+    //Vou mudar essa palhaçada aqui ainda kks, fiz de ultima hora
     @Override
     public void execute(User user, String[] args, TextChannel channel) {
         if (args.length == 0){
@@ -65,11 +64,6 @@ public class LeaderboardCommand extends PaladinsCommand {
             LeaderBoard leaderboard = leaderBoard(tier);
             List<Place> places = leaderboard.getAsList();
 
-            if (places.size() == 0) {
-                reply("Não foi possivel responder a sua solicitação, API não retornou nenhum valor");
-                return;
-            }
-
             if (isGrandMaster && places.get(0).getPoints() < 100) {
                 reply(grandMasterNull().build());
                 return;
@@ -79,11 +73,16 @@ public class LeaderboardCommand extends PaladinsCommand {
                 places.removeAll(places.stream().filter(place -> place.getPoints() < 100).collect(Collectors.toList()));
             }
 
-            List<List<Place>> partition = ListUtils.partition(places, 10);
             List<EmbedBuilder> embeds = new ArrayList<>();
 
+            if (places.size() <= 10){
+                reply(places(places, (isGrandMaster) ? Tier.Grandmaster : tier, places.size(), places.size()).build());
+                return;
+            }
+            List<List<Place>> partition = ListUtils.partition(places, 10);
             boolean isMaster = tier == Tier.Master && places.get(0).getPoints() > 99;
             int size = partition.size();
+
             if (isMaster) {
                 if (isGrandMaster) {
                     tier = Tier.Grandmaster;
@@ -92,8 +91,13 @@ public class LeaderboardCommand extends PaladinsCommand {
                     places.removeAll(places.stream().filter(place -> place.getPoints() >= 100)
                             .limit(100).collect(Collectors.toList()));
 
-                    partition = ListUtils.partition(places, 10);
-                    size = partition.size();
+                    if (places.size() <= 10){
+                        partition = Collections.singletonList(places);
+                        size = partition.size();
+                    } else {
+                        partition = ListUtils.partition(places, 10);
+                        size = partition.size();
+                    }
                 }
             }
 
@@ -182,12 +186,21 @@ public class LeaderboardCommand extends PaladinsCommand {
     }
 
     private boolean valid(Tier tier, String string){
-        return StringUtils.containsEqualsIgnoreCase(tier.name()
+        String tierReplace = tier.name()
                 .replace("Platinum", "Platina")
                 .replace("Diamond", "Diamante")
                 .replace("Silver", "Prata")
-                .replace("Gold", "Ouro")
-                .replace("Master", "Mestre"), string);
+                .replace("Gold", "Ouro");
+
+        if (tier == Tier.Grandmaster || tier == Tier.Master) {
+            return StringUtils.containsEqualsIgnoreCase(string, "GM") ||
+                    StringUtils.containsEqualsIgnoreCase(string, "Grão mestre") ||
+                    StringUtils.containsEqualsIgnoreCase(string, "Grandmaster") ||
+                    string.equalsIgnoreCase("Mestre") ||
+                    string.equalsIgnoreCase("Master");
+        }
+
+        return StringUtils.containsEqualsIgnoreCase(tierReplace, string);
     }
 }
 
