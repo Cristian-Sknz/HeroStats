@@ -15,6 +15,7 @@ import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.enums.PlayerStatus;
 import me.skiincraft.api.paladins.enums.Tier;
+import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.Place;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.Command;
@@ -52,7 +53,11 @@ public abstract class PaladinsCommand extends Command {
 
         EndPoint endpoint = sessions.get(0).getEndPoint();
         Request<SearchResults> request = endpoint.searchPlayer(name, platform);
-        return request.get().getAsList();
+        List<SearchPlayer> search = request.get().getAsList();
+        if (search.size() == 0){
+            throw new SearchException("Não foi encontrado este jogador.");
+        }
+        return search;
     }
 
     protected SearchPlayer searchPlayer(String name, Platform platform){
