@@ -8,10 +8,13 @@ import me.skiincraft.discord.core.common.chooser.ChooserListeners;
 import me.skiincraft.discord.core.common.reactions.ReactionListeners;
 import me.skiincraft.discord.core.common.reactions.Reactions;
 import me.skiincraft.discord.core.plugin.OusuPlugin;
+import me.skiincraft.discord.core.utils.PresenceUpdater;
 import me.skiincraft.discord.herostats.commands.*;
 import me.skiincraft.discord.herostats.session.SessionConfiguration;
+import net.dv8tion.jda.api.entities.Activity;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Locale;
 
 public class HeroStatsBot extends OusuPlugin {
@@ -51,6 +54,7 @@ public class HeroStatsBot extends OusuPlugin {
         getPlugin().getCommandManager().registerCommand(new LeaderboardCommand());
 		getPlugin().getCommandManager().registerCommand(new PingCommand());
 		getPlugin().getCommandManager().registerCommand(new DataUsedCommand());
+		getPlugin().getCommandManager().registerCommand(new HistoryCommand());
 
 		ChooserListeners listener = new ChooserListeners();
 		chooser = Chooser.of(listener);
@@ -61,6 +65,7 @@ public class HeroStatsBot extends OusuPlugin {
 		getPlugin().getEventManager().registerListener(rlistener);
 
 		getPlugin().addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
+		new PresenceUpdater(getPlugin(), Arrays.asList(Activity.listening("h!help para ajuda!"), Activity.listening("Problemas? Reporte para o developer!")));
 	}
 
 	public static Chooser getChooser() {
