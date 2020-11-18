@@ -1,16 +1,11 @@
 package me.skiincraft.discord.herostats.commands;
 
 import java.awt.Color;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import me.skiincraft.api.paladins.utils.AccessUtils;
-import me.skiincraft.discord.herostats.HeroStatsBot;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 
@@ -167,7 +162,6 @@ public class TypeEmbed {
 		b.setColor(new Color(255, 140, 0));
 		b.setTitle(title);
 		b.setDescription(description);
-		b.setFooter("HeroStats 2020.");
 		return b;
 	}
 
