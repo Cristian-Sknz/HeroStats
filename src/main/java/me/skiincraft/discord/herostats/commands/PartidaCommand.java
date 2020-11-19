@@ -13,6 +13,7 @@ import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.core.utils.StringUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
@@ -20,8 +21,7 @@ import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.imagebuild.LiveMatchImage;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.awt.*;
 import java.io.InputStream;
@@ -39,11 +39,11 @@ public class PartidaCommand extends PaladinsCommand {
 	}
 
 	@Override
-	public void execute(User user, String[] args, TextChannel channel) {
+	public void execute(Member user, String[] args, InteractChannel channel) {
 		Paladins paladins = HeroStatsBot.getPaladins();
-		LanguageManager lang = getLanguageManager();
+		LanguageManager lang = getLanguageManager(channel.getTextChannel().getGuild());
 		if (args.length == 0) {
-			reply("h!" + getUsage());
+			channel.reply("h!" + getUsage());
 			return;
 		}
 
@@ -53,44 +53,43 @@ public class PartidaCommand extends PaladinsCommand {
 					: searchPlayer(args[0], Platform.PC);
 
 			if (searchPlayer.isPrivacyFlag()) {
-				reply(TypeEmbed.privateProfile().build());
+				channel.reply(TypeEmbed.privateProfile().build());
 				return;
 			}
 
 			PlayerStatus status = playerStatus(searchPlayer.getUserId());
 			if (status.getStatus() == PlayerStatus.Status.Online){
-				reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_OFFLINE_USER"), lang.getString("Warnings", "OFFLINE_USER")).build());
+				channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_OFFLINE_USER"), lang.getString("Warnings", "OFFLINE_USER")).build());
 				return;
 			}
 
 			if (status.isInMatch()){
-				reply(TypeEmbed.processing().build(), message -> {
+				channel.reply(TypeEmbed.processing().build(), message -> {
 					try {
 						LiveMatch live = liveMatch(status.getMatchId());
 						String map = (live.getMapName() != null) ? StringUtils.arrayToString2(1, live.getMapName().split(" ")) : null;
 						InputStream input = LiveMatchImage.drawImagePartida(map, live);
-						reply(new ContentMessage(embed(live, args[0]).build(), input, "png"));
+						channel.reply(new ContentMessage(embed(live, args[0], getLanguageManager(channel.getTextChannel().getGuild())).build(), input, "png"));
 						message.delete().queue();
 					} catch (Exception e){
-						reply("Ops... Tive um problema: `" + e.getMessage() + "`");
+						channel.reply("Ops... Tive um problema: `" + e.getMessage() + "`");
 						e.printStackTrace();
 					}
 				});
 			} else {
-				reply(TypeEmbed.simpleEmbed(lang.getString("Warnings","T_NO_MATCH_FOUND"),lang.getString("Warnings","NO_MATCH_FOUND")).build());
+				channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings","T_NO_MATCH_FOUND"),lang.getString("Warnings","NO_MATCH_FOUND")).build());
 			}
 		} catch (MatchException e) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings","T_NO_MATCH_FOUND"),lang.getString("Warnings","NO_MATCH_FOUND")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings","T_NO_MATCH_FOUND"),lang.getString("Warnings","NO_MATCH_FOUND")).build());
 		} catch (PlayerException | SearchException e) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
-			reply(TypeEmbed.errorMessage(e, channel).build());
+			channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
 		}
 	}
 
-	public EmbedBuilder embed(LiveMatch match, String player) {
+	public EmbedBuilder embed(LiveMatch match, String player, LanguageManager lang) {
 		EmbedBuilder embed = new EmbedBuilder();
-		LanguageManager lang = getLanguageManager();
 		LivePlayer principal = null;
 		List<LivePlayer> all = new ArrayList<>();
 		all.addAll(match.getTeamBlue());
@@ -138,8 +137,7 @@ public class PartidaCommand extends PaladinsCommand {
 		return null;
 	}
 
-	public String convertQueue(Queue queue) {
-		LanguageManager lang = getLanguageManager();
+	public String convertQueue(Queue queue, LanguageManager lang) {
 		if (queue.name().contains("Live_Competitive")) {
 			return lang.getString("PaladinsQueue", "LIVE_COMPETITIVE");
 		}

@@ -2,11 +2,11 @@ package me.skiincraft.discord.herostats.commands;
 
 import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.hirez.DataUsed;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -22,16 +22,16 @@ public class DataUsedCommand extends PaladinsCommand {
     }
 
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
+    public void execute(Member user, String[] args, InteractChannel channel) {
         if (!user.getId().equalsIgnoreCase("247096601242238991")){
-            reply("Você não tem permissão para isso.");
+            channel.reply("Você não tem permissão para isso.");
             return;
         }
         try {
             DataUsed dataused = Paladins.getInstance().getDataUsed(endpoint().getSession()).get();
-            reply(datausedEmbed(dataused).build());
+            channel.reply(datausedEmbed(dataused).build());
         } catch (Exception e){
-            reply(TypeEmbed.errorMessage(e, channel).build());
+            channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
         }
     }
 

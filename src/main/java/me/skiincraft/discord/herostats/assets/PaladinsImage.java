@@ -2,6 +2,7 @@ package me.skiincraft.discord.herostats.assets;
 
 import me.skiincraft.api.paladins.entity.champions.Champion;
 import me.skiincraft.api.paladins.enums.Tier;
+import me.skiincraft.discord.core.OusuCore;
 import me.skiincraft.discord.core.utils.StringUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 
@@ -27,28 +28,23 @@ import java.util.List;
 public class PaladinsImage {
 
     private static Path getAvatarPath() {
-        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
-        return Paths.get(assetspath + "/avatar/");
+        return Paths.get(OusuCore.getAssetsPath() + "/avatar/");
     }
 
     private static Path getBackgroundsPath() {
-        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
-        return Paths.get(assetspath + "/backgrounds/");
+        return Paths.get(OusuCore.getAssetsPath() + "/backgrounds/");
     }
 
     private static Path getTierPath() {
-        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
-        return Paths.get(assetspath + "/elos/");
+        return Paths.get(OusuCore.getAssetsPath() + "/elos/");
     }
 
     private static Path getMapsPath() {
-        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
-        return Paths.get(assetspath + "/maps/");
+        return Paths.get(OusuCore.getAssetsPath() + "/maps/");
     }
 
     private static Path getAssetsPath() {
-        String assetspath = HeroStatsBot.getMain().getPlugin().getAssetsPath().getAbsolutePath();
-        return Paths.get(assetspath + "/");
+        return Paths.get(OusuCore.getAssetsPath() + "/");
     }
 
     @Nullable
@@ -153,7 +149,7 @@ public class PaladinsImage {
                     .findAny()
                     .orElseGet(() -> {
                         try {
-                            File file = new File(HeroStatsBot.getMain().getPlugin().getAssetsPath()+ "/avatar/" + champion.getName() + ".jpg");
+                            File file = new File(OusuCore.getAssetsPath()+ "/avatar/" + champion.getName() + ".jpg");
                             file.createNewFile();
                             writeInJpeg(ImageIO.read(new URL(champion.getIcon())), file);
                             return file;

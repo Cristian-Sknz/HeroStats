@@ -1,31 +1,25 @@
 package me.skiincraft.discord.herostats.commands;
 
-import com.google.gson.JsonObject;
 import me.skiincraft.api.paladins.entity.player.Player;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.enums.Tier;
 import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
-import me.skiincraft.api.paladins.impl.PlayerImpl;
 import me.skiincraft.api.paladins.objects.Place;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.api.paladins.ranked.RankedKBM;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.exceptions.UnavailableAPIException;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
+import me.skiincraft.discord.herostats.utils.IntegerUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class SplitCommand extends PaladinsCommand {
@@ -39,9 +33,9 @@ public class SplitCommand extends PaladinsCommand {
     }
 
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
+    public void execute(Member user, String[] args, InteractChannel channel) {
         if (args.length == 0){
-            reply("h!" + getUsage());
+            channel.reply("h!" + getUsage());
             return;
         }
 
@@ -51,28 +45,27 @@ public class SplitCommand extends PaladinsCommand {
                     : searchPlayer(args[0], Platform.PC);
 
             if (searchPlayer.isPrivacyFlag()) {
-                reply(TypeEmbed.privateProfile().build());
+                channel.reply(TypeEmbed.privateProfile().build());
                 return;
             }
 
             Player player = player(searchPlayer.getUserId());
 
-            reply(splitEmbed(player, leaderboardPlace(player)).build());
+            channel.reply(splitEmbed(player, leaderboardPlace(player), getLanguageManager(channel.getTextChannel().getGuild())).build());
 
         } catch (UnavailableAPIException apiException) {
-            reply("A API do paladins se encontra indisponivel no momento.");
+            channel.reply("A API do paladins se encontra indisponivel no momento.");
         } catch (PlayerException | SearchException e){
-            reply(TypeEmbed.simpleEmbed(getLanguageManager().getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager().getString("Warnings", "INEXISTENT_USER")).build());
+            channel.reply(TypeEmbed.simpleEmbed(getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "INEXISTENT_USER")).build());
         } catch (Exception e){
-            reply(TypeEmbed.errorMessage(e, channel).build());
+            channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
         }
     }
 
-    public EmbedBuilder splitEmbed(Player player, Place place){
+    public EmbedBuilder splitEmbed(Player player, Place place, LanguageManager lang){
         RankedKBM rank = player.getRankedKBM();
         String placetext = (place == null) ? "" : " (" + place.getPosition() + "º)";
         EmbedBuilder embed = new EmbedBuilder();
-        LanguageManager lang = getLanguageManager();
 
         Tier tier = (place == null) ? player.getTier() : place.getTier();
 

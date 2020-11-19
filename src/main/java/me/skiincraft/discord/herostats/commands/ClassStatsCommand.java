@@ -1,13 +1,5 @@
 package me.skiincraft.discord.herostats.commands;
 
-import java.awt.Color;
-import java.io.IOException;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import javax.imageio.ImageIO;
-
 import me.skiincraft.api.paladins.common.EndPoint;
 import me.skiincraft.api.paladins.entity.player.PlayerChampion;
 import me.skiincraft.api.paladins.enums.Language;
@@ -15,16 +7,23 @@ import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.command.Command;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.ImageUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.enums.PaladinsClass;
+import me.skiincraft.discord.herostats.utils.ImageUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 public class ClassStatsCommand extends PaladinsCommand {
 
@@ -38,15 +37,15 @@ public class ClassStatsCommand extends PaladinsCommand {
 	}
 
 	@Override
-	public void execute(User user, String[] args, TextChannel channel) {
-		LanguageManager lang = getLanguageManager();
+	public void execute(Member user, String[] args, InteractChannel channel) {
+		LanguageManager lang = getLanguageManager(channel.getTextChannel().getGuild());
 		if (args.length <= 1) {
-			reply("h!" + getUsage());
+			channel.reply("h!" + getUsage());
 			return;
 		}
 
 		if (convertClassString(args[1]) == null) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INVALID_CHAMPION_CLASS"), lang.getString("Warnings", "INVALID_CHAMPION_CLASS")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INVALID_CHAMPION_CLASS"), lang.getString("Warnings", "INVALID_CHAMPION_CLASS")).build());
 			return;
 		}
 
@@ -57,23 +56,23 @@ public class ClassStatsCommand extends PaladinsCommand {
 					: searchPlayer(args[0], Platform.PC);
 
 			if (searchPlayer.isPrivacyFlag()) {
-				reply(TypeEmbed.privateProfile().build());
+				channel.reply(TypeEmbed.privateProfile().build());
 				return;
 			}
 
-			reply(TypeEmbed.processing().appendDescription("\nEssa operação usa muito processamento...").build(), message ->{
+			channel.reply(TypeEmbed.processing().appendDescription("\nEssa operação usa muito processamento...").build(), message ->{
 				List<PlayerChampion> ranks = requester.getPlayerChampions(searchPlayer.getUserId()).get().getAsList();
 				List<PlayerChampion> classrank = getClassChampionRanks(ranks, convertClassString(args[1]));
 
-				reply(embed(searchPlayer, classrank, PaladinsClass.Support).build());
+				channel.reply(embed(searchPlayer, classrank, PaladinsClass.Support).build());
 				message.delete().queue();
 			});
 		} catch (SearchException e) {
-			reply(TypeEmbed.simpleEmbed(getLanguageManager().getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager().getString("Warnings", "INEXISTENT_USER")).build());
+			channel.reply(TypeEmbed.simpleEmbed(getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (PlayerException e) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
-			reply(TypeEmbed.errorMessage(e, channel).build());
+			channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
 		}
 	}
 

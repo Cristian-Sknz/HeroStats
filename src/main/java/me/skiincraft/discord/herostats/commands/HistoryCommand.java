@@ -8,14 +8,14 @@ import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.exceptions.MatchException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.common.reactions.ReactionObject;
 import me.skiincraft.discord.core.common.reactions.Reactions;
 import me.skiincraft.discord.core.common.reactions.custom.ReactionPage;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.awt.*;
 import java.text.NumberFormat;
@@ -47,9 +47,9 @@ public class HistoryCommand extends PaladinsCommand {
     }
 
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
+    public void execute(Member user, String[] args, InteractChannel channel) {
         if (args.length == 0) {
-            reply("h!" + getUsage());
+            channel.reply("h!" + getUsage());
             return;
         }
         String[] newArgs = replaceSpaceChamps(args);
@@ -59,11 +59,11 @@ public class HistoryCommand extends PaladinsCommand {
                     : searchPlayer(newArgs[0], Platform.PC);
 
             if (searchPlayer.isPrivacyFlag()) {
-                reply(TypeEmbed.privateProfile().build());
+                channel.reply(TypeEmbed.privateProfile().build());
                 return;
             }
 
-            reply(TypeEmbed.processing().build(), message -> {
+            channel.reply(TypeEmbed.processing().build(), message -> {
                 List<HistoryMatch> history = endpont().getMatchHistory(searchPlayer.getUserId()).get();
 
                 if (newArgs.length >= 3){
@@ -93,11 +93,11 @@ public class HistoryCommand extends PaladinsCommand {
                         new ReactionPage(embeds, true));
             });
         } catch (MatchException e) {
-            reply(TypeEmbed.DefaultEmbed("Não foi possivel encontrar nenhuma partida", "Algo aconteceu, e não foi possivel pegar as partidas").build());
+            channel.reply(TypeEmbed.DefaultEmbed("Não foi possivel encontrar nenhuma partida", "Algo aconteceu, e não foi possivel pegar as partidas").build());
          } catch (SearchException e) {
-            reply(TypeEmbed.simpleEmbed(getLanguageManager().getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager().getString("Warnings", "INEXISTENT_USER")).build());
+            channel.reply(TypeEmbed.simpleEmbed(getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager(channel.getTextChannel().getGuild()).getString("Warnings", "INEXISTENT_USER")).build());
         } catch (Exception e) {
-            reply(TypeEmbed.errorMessage(e, channel).build());
+            channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
         }
     }
 

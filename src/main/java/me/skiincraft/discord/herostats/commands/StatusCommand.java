@@ -12,18 +12,17 @@ import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.Emoji;
-import me.skiincraft.discord.core.utils.ImageUtils;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.imagebuild.StatusImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
+import me.skiincraft.discord.herostats.utils.ImageUtils;
+import me.skiincraft.discord.herostats.utils.IntegerUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -44,14 +43,14 @@ public class StatusCommand extends PaladinsCommand {
 	}
 
 	@Override
-	public void execute(User user, String[] args, TextChannel channel) {
+	public void execute(Member user, String[] args, InteractChannel channel) {
 		// LanguageManager lang = getLanguageManager();
 		if (args.length == 0) {
-			reply("h!" + getUsage());
+			channel.reply("h!" + getUsage());
 			return;
 		}
 
-		LanguageManager lang = getLanguageManager();
+		LanguageManager lang = getLanguageManager(channel.getTextChannel().getGuild());
 		EndPoint endPoint = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
 		try {
 			SearchPlayer searchPlayer = (args.length >= 2)
@@ -59,11 +58,11 @@ public class StatusCommand extends PaladinsCommand {
 					: searchPlayer(args[0], Platform.PC);
 
 			if (searchPlayer.isPrivacyFlag()) {
-				reply(TypeEmbed.privateProfile().build());
+				channel.reply(TypeEmbed.privateProfile().build());
 				return;
 			}
 
-			reply(TypeEmbed.processing().build(), processing -> {
+			channel.reply(TypeEmbed.processing().build(), processing -> {
 				Request<Player> request = endPoint.getPlayer(searchPlayer.getUserId());
 				Player player = request.get();
 
@@ -80,27 +79,23 @@ public class StatusCommand extends PaladinsCommand {
 				PlayerStatus status = endPoint.getPlayerStatus(player.getId() + "").get();
 				InputStream input = StatusImage.drawImage(champranks.get(0), player);
 
-				reply(new ContentMessage(embed(player, champranks, status).build(), input, "png"));
+				channel.reply(new ContentMessage(embed(player, champranks, status, lang).build(), input, "png"));
 				processing.delete().queue();
 			});
-		} catch (PlayerException e) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
-		} catch (SearchException e) {
-			reply(TypeEmbed.simpleEmbed(getLanguageManager().getString("Warnings", "T_INEXISTENT_USER"), getLanguageManager().getString("Warnings", "INEXISTENT_USER")).build());
+		} catch (PlayerException | SearchException e) {
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
-			reply(TypeEmbed.errorMessage(e, channel).build());
+			channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
 		}
 	}
 
-	public EmbedBuilder embed(Player player, List<PlayerChampion> rank, PlayerStatus status) {
-		LanguageManager lang = getLanguageManager();
+	public EmbedBuilder embed(Player player, List<PlayerChampion> rank, PlayerStatus status, LanguageManager lang) {
 		EmbedBuilder embed = new EmbedBuilder();
 		String champicon = rank.get(0).getChampion(Language.Portuguese).get().getIcon();
 		embed.setAuthor(player.getInGameName(), null, (player.getAvatarId() != 0)
 				? player.getAvatarURL() : champicon);
 		if (status.getStatus().name().equalsIgnoreCase("offline")) {
-			embed.setDescription(
-					Emoji.BLACK_CIRCLE.getAsMention() + " Status: " + statusconverter(status.getStatus()) + "\n");
+			embed.setDescription(":black_circle: Status: " + statusconverter(status.getStatus()) + "\n");
 		} else {
 			embed.setDescription(":green_circle: Status: " + statusconverter(status.getStatus()) + "\n");
 		}

@@ -8,6 +8,7 @@ import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.common.chooser.ChooserObject;
 import me.skiincraft.discord.core.configuration.LanguageManager;
 import me.skiincraft.discord.herostats.HeroStatsBot;
@@ -15,8 +16,7 @@ import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.choosers.ChampionChooser;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -46,15 +46,16 @@ public class ChampionCommand extends PaladinsCommand {
 				.replace("bomb king", "bomb_king")
 				.replace("mal damba", "mal'damba")
 				.replace("bk", "bomb_king")
+				.replace("maindosknz", "ash")
 				.split(" ");
 	}
 
 
 	@Override
-	public void execute(User user, String[] args, TextChannel channel) {
-		LanguageManager lang = getLanguageManager();
+	public void execute(Member user, String[] args, InteractChannel channel) {
+		LanguageManager lang = getLanguageManager(channel.getTextChannel().getGuild());
 		if (args.length <= 1) {
-			reply("h!"+ getUsage());
+			channel.reply("h!"+ getUsage());
 			return;
 		}
 
@@ -69,7 +70,7 @@ public class ChampionCommand extends PaladinsCommand {
 				.orElse(null);
 		
 		if (champ == null) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_CHAMPION"), lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_CHAMPION"), lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
 			return;
 		}
 
@@ -79,21 +80,21 @@ public class ChampionCommand extends PaladinsCommand {
 					: searchPlayer((newArgs[0]), Platform.PC);
 
 			if (searchPlayer.isPrivacyFlag()) {
-				reply(TypeEmbed.privateProfile().build());
+				channel.reply(TypeEmbed.privateProfile().build());
 				return;
 			}
 
-			reply(embedChoice(champ, searchPlayer).build(), botmessage -> {
-				ChampionChooser chooser = new ChampionChooser(channel, botmessage, requester, searchPlayer);
+			channel.reply(embedChoice(champ, searchPlayer).build(), botmessage -> {
+				ChampionChooser chooser = new ChampionChooser(channel.getTextChannel(), botmessage, requester, searchPlayer);
 				chooser.setChampion(champ);
-				ChooserObject object = new ChooserObject(user.getIdLong(), channel,new String[]{"1", "2", "3", "4", "5", "cancel"});
+				ChooserObject object = new ChooserObject(user.getIdLong(), channel.getTextChannel(), new String[]{"1", "2", "3", "4", "5", "cancel"});
 
 				HeroStatsBot.getChooser().registerChooser(object, chooser);
 			});
 		} catch (SearchException e) {
-			reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+			channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
 		} catch (Exception e){
-			reply(TypeEmbed.errorMessage(e, channel).build());
+			channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
 		}
 	}
 
@@ -108,11 +109,9 @@ public class ChampionCommand extends PaladinsCommand {
 				.appendDescription(":five: - Chacina\n");
 
 		embed.setThumbnail(champion.getIcon());
-		embed.setFooter("Caso queira cancelar digite: 6");
+		embed.setFooter("Caso queira cancelar digite: cancel");
 		embed.setTimestamp(OffsetDateTime.now(ZoneOffset.UTC));
 
 		return embed;
 	}
-
-
 }

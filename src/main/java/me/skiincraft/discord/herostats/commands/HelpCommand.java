@@ -1,13 +1,14 @@
 package me.skiincraft.discord.herostats.commands;
 
+import me.skiincraft.discord.core.OusuCore;
 import me.skiincraft.discord.core.command.Command;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
 
 import java.util.Arrays;
 import java.util.List;
@@ -24,8 +25,8 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
-        reply(helpEmbed().build());
+    public void execute(Member user, String[] args, InteractChannel channel) {
+        channel.reply(helpEmbed().build());
     }
 
     public EmbedBuilder helpEmbed(){
@@ -34,7 +35,7 @@ public class HelpCommand extends Command {
         embed.setAuthor(self.getName(), null, self.getAvatarUrl());
         embed.setTitle(":tickets: Lista de Comandos");
         Category[] categories = new Category[] {Category.Statistics, Category.Match, Category.Ranking};
-        List<PaladinsCommand> commands = HeroStatsBot.getMain().getPlugin().getCommandManager().getCommands()
+        List<PaladinsCommand> commands = OusuCore.getCommandManager().getCommands()
                 .stream().filter(command -> command instanceof PaladinsCommand)
                 .map(command -> (PaladinsCommand) command)
                 .collect(Collectors.toList());

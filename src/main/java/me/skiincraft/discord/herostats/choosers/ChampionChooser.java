@@ -11,26 +11,26 @@ import me.skiincraft.api.paladins.enums.Platform;
 import me.skiincraft.api.paladins.enums.Queue;
 import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
-import me.skiincraft.discord.core.command.ChannelInteract;
 import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.common.chooser.ChooserInterface;
 import me.skiincraft.discord.core.common.chooser.ChooserObject;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.commands.TypeEmbed;
 import me.skiincraft.discord.herostats.imagebuild.ChampionImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
-public class ChampionChooser extends ChannelInteract implements ChooserInterface {
+public class ChampionChooser extends InteractChannel implements ChooserInterface {
 
     private final TextChannel channel;
     private final EndPoint endPoint;
@@ -40,6 +40,7 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
     private Champion champion;
 
     public ChampionChooser(TextChannel channel, Message message, EndPoint endPoint, SearchPlayer searchPlayer) {
+        super(channel);
         this.channel = channel;
         this.endPoint = endPoint;
         this.message = message;
@@ -56,16 +57,15 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
     }
 
     @Override
-    protected MessageChannel getTextChannel() {
-        return channel;
-    }
-
-    @Override
     public boolean execute(String choice, Message message, Member member, ChooserObject object) {
         LanguageManager lang = new LanguageManager(member.getGuild());
         try {
             if (member.getIdLong() != object.getUserId()){
                 return false;
+            }
+
+            if (choice.equalsIgnoreCase("cancel")){
+                reply("A operação foi cancelada!");
             }
             if (object.getOptions()[0].equalsIgnoreCase(choice)) {
                 channel.sendTyping().queue();
@@ -81,7 +81,7 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
                 this.message.delete().queue();
                 return true;
             }
-            if (!IntegerUtils.isNumeric(choice)) {
+            if (!isNumeric(choice)) {
                 return false;
             }
 
@@ -138,8 +138,8 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
         embed.setTimestamp(rank.getLastPlayed());
 
         embed.addField("Modo", rank.getQueue().getName(), true);
-        embed.addField("Taxa de Vitoria", IntegerUtils.getPorcentagem(rank.getWins() + rank.getLosses(), rank.getWins()), true);
-        embed.addField("Taxa de Abates", IntegerUtils.getPorcentagem(rank.getKills() + rank.getDeaths(), rank.getKills()), true);
+        embed.addField("Taxa de Vitoria", getPorcentagem(rank.getWins() + rank.getLosses(), rank.getWins()), true);
+        embed.addField("Taxa de Abates", getPorcentagem(rank.getKills() + rank.getDeaths(), rank.getKills()), true);
 
         return embed;
     }
@@ -170,10 +170,22 @@ public class ChampionChooser extends ChannelInteract implements ChooserInterface
         embed.setTimestamp(rank.getLastPlayed());
 
         embed.addField("Modo", "Todos os modos.", true);
-        embed.addField("Taxa de Vitoria", IntegerUtils.getPorcentagem(rank.getWins() + rank.getLosses(), rank.getWins()), true);
-        embed.addField("Taxa de Abates", IntegerUtils.getPorcentagem(rank.getKills() + rank.getDeaths(), rank.getKills()), true);
+        embed.addField("Taxa de Vitoria", getPorcentagem(rank.getWins() + rank.getLosses(), rank.getWins()), true);
+        embed.addField("Taxa de Abates", getPorcentagem(rank.getKills() + rank.getDeaths(), rank.getKills()), true);
 
         return embed;
+    }
+
+    public static String getPorcentagem(float maxValue, float of){
+        return new DecimalFormat("#.0").format((of * 100) / maxValue) + "%";
+    }
+
+    public static boolean isNumeric(String strNum) {
+        Pattern pattern = Pattern.compile("-?\\d+(\\.\\d+)?");
+        if (strNum == null) {
+            return false;
+        }
+        return pattern.matcher(strNum).matches();
     }
 
     private Queue getQueueByNumber(int number, boolean isConsole) {

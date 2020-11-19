@@ -4,9 +4,9 @@ import me.skiincraft.api.paladins.entity.champions.Champion;
 import me.skiincraft.api.paladins.entity.match.LiveMatch;
 import me.skiincraft.api.paladins.entity.match.LivePlayer;
 import me.skiincraft.api.paladins.enums.Language;
-import me.skiincraft.discord.core.textfont.CustomFont;
-import me.skiincraft.discord.core.utils.ImageBuilder;
+import me.skiincraft.discord.core.common.CustomFont;
 import me.skiincraft.discord.herostats.assets.PaladinsImage;
+import me.skiincraft.discord.herostats.utils.ImageBuilder;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -33,7 +33,7 @@ public class LiveMatchImage {
         //FADE
         principal.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAssetsImage("TeamFade"))), 863 / 2, 313 / 2, principal.getSize(),
                 ImageBuilder.Alignment.Center);
-		Font font = new CustomFont().getFont("gabriola", Font.BOLD, 22);
+		Font font = CustomFont.getFont("gabriola", Font.BOLD, 22);
         addTime1(principal, team1, font);
 		addTime2(principal, team2, font);
 

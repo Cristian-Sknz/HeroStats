@@ -3,12 +3,13 @@ package me.skiincraft.discord.herostats;
 import me.skiincraft.api.paladins.Paladins;
 import me.skiincraft.api.paladins.PaladinsBuilder;
 import me.skiincraft.api.paladins.enums.Language;
+import me.skiincraft.discord.core.OusuCore;
+import me.skiincraft.discord.core.common.PresenceUpdater;
 import me.skiincraft.discord.core.common.chooser.Chooser;
 import me.skiincraft.discord.core.common.chooser.ChooserListeners;
 import me.skiincraft.discord.core.common.reactions.ReactionListeners;
 import me.skiincraft.discord.core.common.reactions.Reactions;
 import me.skiincraft.discord.core.plugin.OusuPlugin;
-import me.skiincraft.discord.core.utils.PresenceUpdater;
 import me.skiincraft.discord.herostats.commands.*;
 import me.skiincraft.discord.herostats.session.SessionConfiguration;
 import net.dv8tion.jda.api.entities.Activity;
@@ -43,29 +44,28 @@ public class HeroStatsBot extends OusuPlugin {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		getPlugin().getCommandManager().registerCommand(new StatusCommand());
-		getPlugin().getCommandManager().registerCommand(new ChampionCommand());
-		getPlugin().getCommandManager().registerCommand(new DeckCommand());
-		getPlugin().getCommandManager().registerCommand(new ClassStatsCommand());
-		getPlugin().getCommandManager().registerCommand(new SplitCommand());
-		getPlugin().getCommandManager().registerCommand(new HelpCommand());
-		getPlugin().getCommandManager().registerCommand(new PartidaCommand());
-        getPlugin().getCommandManager().registerCommand(new LeaderboardCommand());
-		getPlugin().getCommandManager().registerCommand(new PingCommand());
-		getPlugin().getCommandManager().registerCommand(new DataUsedCommand());
-		getPlugin().getCommandManager().registerCommand(new HistoryCommand());
+		OusuCore.registerCommand(new StatusCommand());
+		OusuCore.registerCommand(new ChampionCommand());
+		OusuCore.registerCommand(new DeckCommand());
+		OusuCore.registerCommand(new ClassStatsCommand());
+		OusuCore.registerCommand(new SplitCommand());
+		OusuCore.registerCommand(new HelpCommand());
+		OusuCore.registerCommand(new PartidaCommand());
+        OusuCore.registerCommand(new LeaderboardCommand());
+		OusuCore.registerCommand(new PingCommand());
+		OusuCore.registerCommand(new DataUsedCommand());
+		OusuCore.registerCommand(new HistoryCommand());
 
 		ChooserListeners listener = new ChooserListeners();
 		chooser = Chooser.of(listener);
-		getPlugin().getEventManager().registerListener(listener);
+		OusuCore.registerListener(listener);
 
 		ReactionListeners rlistener = new ReactionListeners();
 		reaction = Reactions.of(rlistener);
-		getPlugin().getEventManager().registerListener(rlistener);
+		OusuCore.registerListener(rlistener);
 
-		getPlugin().addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
-		new PresenceUpdater(getPlugin(), Arrays.asList(Activity.listening("h!help para ajuda!"), Activity.listening("Problemas? Reporte para o developer!")));
+		OusuCore.addLanguage(new me.skiincraft.discord.core.configuration.Language(new Locale("pt", "BR")));
+		new PresenceUpdater(Arrays.asList(Activity.listening("h!help para ajuda!"), Activity.listening("Problemas? Reporte para o developer!")));
 	}
 
 	public static Chooser getChooser() {

@@ -17,12 +17,11 @@ import me.skiincraft.api.paladins.entity.player.Loadout;
 import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.objects.Card;
 import me.skiincraft.api.paladins.objects.LoadoutItem;
-import me.skiincraft.discord.core.plugin.Plugin;
-import me.skiincraft.discord.core.textfont.CustomFont;
-import me.skiincraft.discord.core.utils.ImageBuilder;
-import me.skiincraft.discord.core.utils.ImageBuilder.Alignment;
+import me.skiincraft.discord.core.OusuCore;
+import me.skiincraft.discord.core.common.CustomFont;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.PaladinsImage;
+import me.skiincraft.discord.herostats.utils.ImageBuilder;
 
 import javax.imageio.ImageIO;
 
@@ -46,7 +45,6 @@ public class DeckPreviewImage {
 	}
 
 	public static InputStream drawImage(Loadout loadouts) {
-		Plugin plugin = HeroStatsBot.getMain().getPlugin();
 		List<Card> c = HeroStatsBot.getPaladins().getSessions().get(0)
 				.getEndPoint()
 				.getChampionCards(loadouts.getChampionId(), Language.Portuguese)
@@ -73,23 +71,22 @@ public class DeckPreviewImage {
 		try {
 			String champname = champion.getName();
 			im.drawImage(ImageIO.read(PaladinsImage.getBackground(champion)),
-					0, 0, new Dimension(900, 239), Alignment.Bottom_left);
+					0, 0, new Dimension(900, 239), ImageBuilder.Alignment.Bottom_left);
 
-			CustomFont font = new CustomFont();
-			Font arial = font.getFont("arial_rounded", Font.PLAIN, 12);
+			Font arial = CustomFont.getFont("arial_rounded", Font.PLAIN, 12);
 			int x = 85;
 
 			for (CardDeck items : loadoutCards) {
 				Card card = items.getCard();
 				LoadoutItem item = items.getItem();
 				        try {
-							im.drawImage(new URL(card.getIcon()), x, 76, new Dimension(127, 99), Alignment.Center);
+							im.drawImage(new URL(card.getIcon()), x, 76, new Dimension(127, 99), ImageBuilder.Alignment.Center);
 						} catch (Exception e){
-							im.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAssetsImage("default_card"))), x, 76, new Dimension(127, 99), Alignment.Center);
+							im.drawImage(ImageIO.read(Objects.requireNonNull(PaladinsImage.getAssetsImage("default_card"))), x, 76, new Dimension(127, 99), ImageBuilder.Alignment.Center);
 						}
-						im.drawImage(new File(plugin.getAssetsPath().getAbsolutePath() + "/cards/" + "Level "
+						im.drawImage(new File(OusuCore.getAssetsPath() + "/cards/" + "Level "
 										+ item.getPoints() + " Paladins Card.png"),
-								x, 122, new Dimension(161, 244), Alignment.Center);
+								x, 122, new Dimension(161, 244), ImageBuilder.Alignment.Center);
 						// +180
 
 						// 59

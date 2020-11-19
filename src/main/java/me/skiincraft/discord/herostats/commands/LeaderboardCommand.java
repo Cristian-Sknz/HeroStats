@@ -5,6 +5,7 @@ import me.skiincraft.api.paladins.enums.Language;
 import me.skiincraft.api.paladins.enums.Tier;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.Place;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.common.reactions.ReactionObject;
 import me.skiincraft.discord.core.common.reactions.Reactions;
 import me.skiincraft.discord.core.common.reactions.custom.ReactionPage;
@@ -13,8 +14,7 @@ import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Member;
 import org.apache.commons.collections4.ListUtils;
 
 import java.awt.*;
@@ -34,9 +34,9 @@ public class LeaderboardCommand extends PaladinsCommand {
 
     //Vou mudar essa palhaçada aqui ainda kks, fiz de ultima hora
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
+    public void execute(Member user, String[] args, InteractChannel channel) {
         if (args.length == 0){
-            reply("h!" + getUsage());
+            channel.reply("h!" + getUsage());
             return;
         }
 
@@ -49,7 +49,7 @@ public class LeaderboardCommand extends PaladinsCommand {
                         .orElse(null));
 
         if (tier == null){
-            reply(TypeEmbed.WarningEmbed("Elo não encontrado!", "Esse elo que você digitou é invalido").build());
+            channel.reply(TypeEmbed.WarningEmbed("Elo não encontrado!", "Esse elo que você digitou é invalido").build());
             return;
         }
 
@@ -65,7 +65,7 @@ public class LeaderboardCommand extends PaladinsCommand {
             List<Place> places = leaderboard.getAsList();
 
             if (isGrandMaster && places.get(0).getPoints() < 100) {
-                reply(grandMasterNull().build());
+                channel.reply(grandMasterNull().build());
                 return;
             }
 
@@ -76,7 +76,7 @@ public class LeaderboardCommand extends PaladinsCommand {
             List<EmbedBuilder> embeds = new ArrayList<>();
 
             if (places.size() <= 10){
-                reply(places(places, (isGrandMaster) ? Tier.Grandmaster : tier, places.size(), places.size()).build());
+                channel.reply(places(places, (isGrandMaster) ? Tier.Grandmaster : tier, places.size(), places.size()).build());
                 return;
             }
             List<List<Place>> partition = ListUtils.partition(places, 10);
@@ -107,12 +107,12 @@ public class LeaderboardCommand extends PaladinsCommand {
                 embeds.add(places(value, tier, i * 10, size * 10));
             }
 
-            reply(embeds.get(0).build(), message -> Objects.requireNonNull(Reactions.getInstance()).registerReaction(new ReactionObject(message, user.getIdLong(), new String[]{"U+25C0", "U+25B6"}),
+            channel.reply(embeds.get(0).build(), message -> Objects.requireNonNull(Reactions.getInstance()).registerReaction(new ReactionObject(message, user.getIdLong(), new String[]{"U+25C0", "U+25B6"}),
                     new ReactionPage(embeds, true)));
         } catch (SearchException e){
-            reply(unavailableTier(tier).build());
+            channel.reply(unavailableTier(tier).build());
         } catch (Exception e) {
-            reply(TypeEmbed.errorMessage(e, channel).build());
+            channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
         }
     }
 

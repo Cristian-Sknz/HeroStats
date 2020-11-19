@@ -9,14 +9,15 @@ import me.skiincraft.api.paladins.exceptions.PlayerException;
 import me.skiincraft.api.paladins.exceptions.SearchException;
 import me.skiincraft.api.paladins.objects.SearchPlayer;
 import me.skiincraft.discord.core.command.ContentMessage;
+import me.skiincraft.discord.core.command.InteractChannel;
 import me.skiincraft.discord.core.common.chooser.ChooserObject;
 import me.skiincraft.discord.core.configuration.LanguageManager;
-import me.skiincraft.discord.core.utils.IntegerUtils;
 import me.skiincraft.discord.herostats.HeroStatsBot;
 import me.skiincraft.discord.herostats.assets.Category;
 import me.skiincraft.discord.herostats.assets.PaladinsCommand;
 import me.skiincraft.discord.herostats.imagebuild.DeckPreviewImage;
 import me.skiincraft.discord.herostats.utils.HeroUtils;
+import me.skiincraft.discord.herostats.utils.IntegerUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 
@@ -51,10 +52,10 @@ public class DeckCommand extends PaladinsCommand {
     }
 
     @Override
-    public void execute(User user, String[] args, TextChannel channel) {
-        LanguageManager lang = getLanguageManager();
+    public void execute(Member user, String[] args, InteractChannel channel) {
+        LanguageManager lang = getLanguageManager(channel.getTextChannel().getGuild());
         if (args.length <= 1) {
-            reply("h!" + getUsage());
+            channel.reply("h!" + getUsage());
             return;
         }
         EndPoint queue = HeroStatsBot.getPaladins().getSessions().get(0).getEndPoint();
@@ -64,7 +65,7 @@ public class DeckCommand extends PaladinsCommand {
 
         Champion champion = champions.stream().filter(o -> o.getName().equalsIgnoreCase(newArgs[1].replace("_", " "))).findAny().orElse(null);
         if (champion == null) {
-            reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_CHAMPION"), lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
+            channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_CHAMPION"), lang.getString("Warnings", "INEXISTENT_CHAMPION")).build());
             return;
         }
 
@@ -74,7 +75,7 @@ public class DeckCommand extends PaladinsCommand {
                     : searchPlayer(newArgs[0], Platform.PC);
 
             if (searchPlayer.isPrivacyFlag()) {
-                reply(TypeEmbed.privateProfile().build());
+                channel.reply(TypeEmbed.privateProfile().build());
                 return;
             }
 
@@ -88,12 +89,12 @@ public class DeckCommand extends PaladinsCommand {
             }
 
             if (decks.size() == 0) {
-                reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_LOADOUT"), lang.getString("Warnings", "INEXISTENT_LOADOUT")).build());
+                channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_LOADOUT"), lang.getString("Warnings", "INEXISTENT_LOADOUT")).build());
                 return;
             }
 
             if (decks.size() > 1) {
-                reply(deckChooser(decks).build(), chooserMessage -> HeroStatsBot.getChooser().registerChooser(new ChooserObject(user.getIdLong(), channel, new String[]{""}), (choice, message, member, object) -> {
+                channel.reply(deckChooser(decks).build(), chooserMessage -> HeroStatsBot.getChooser().registerChooser(new ChooserObject(user.getIdLong(), channel.getTextChannel(), new String[]{""}), (choice, message, member, object) -> {
                     if (member.getIdLong() != object.getUserId()) {
                         return false;
                     }
@@ -108,7 +109,7 @@ public class DeckCommand extends PaladinsCommand {
                     }
                     Loadout l = decks.get(i - 1);
                     InputStream input = DeckPreviewImage.drawImage(l);
-                    reply(new ContentMessage(DeckCommand.embed(l).build(), input, "png"));
+                    channel.reply(new ContentMessage(DeckCommand.embed(l).build(), input, "png"));
                     chooserMessage.delete().queue();
                     return true;
                 }));
@@ -116,11 +117,11 @@ public class DeckCommand extends PaladinsCommand {
             }
 
             InputStream input = DeckPreviewImage.drawImage(decks.get(0));
-            reply(new ContentMessage(embed(decks.get(0)).build(), input, "png"));
+            channel.reply(new ContentMessage(embed(decks.get(0)).build(), input, "png"));
         } catch (SearchException | PlayerException e) {
-            reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
+            channel.reply(TypeEmbed.simpleEmbed(lang.getString("Warnings", "T_INEXISTENT_USER"), lang.getString("Warnings", "INEXISTENT_USER")).build());
         } catch (Exception e) {
-            reply(TypeEmbed.errorMessage(e, channel).build());
+            channel.reply(TypeEmbed.errorMessage(e, channel.getTextChannel()).build());
         }
     }
 
