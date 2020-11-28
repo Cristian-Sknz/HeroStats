@@ -17,7 +17,7 @@ tasks.withType(JavaCompile) {
 }
 
 dependencies {
-    compileOnly(group: 'com.github.Ou-su-Bot', name: 'OusuCore', version: '2020.1110.0')
+    compileOnly(group: 'com.github.Ou-su-Bot', name: 'OusuCore', version: '2020.1128.0')
     compileOnly 'com.github.Cristian-Sknz:Paladins-Wrapper:1.3.0'
     compileOnly group: 'net.dv8tion', name: 'JDA', version: '4.1.1_101'
     compileOnly group: 'org.ocpsoft.prettytime', name: 'prettytime', version: '4.0.5.Final'
